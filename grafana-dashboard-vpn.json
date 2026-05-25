@@ -1,0 +1,118 @@
+{
+  "__inputs": [{ "name": "DS_TIMESCALEDB", "label": "TimescaleDB", "type": "datasource", "pluginId": "postgres" }],
+  "title": "Koiote — VPN Status",
+  "uid": "koiote-vpn-status",
+  "schemaVersion": 38,
+  "version": 1,
+  "refresh": "30s",
+  "time": { "from": "now-1h", "to": "now" },
+  "panels": [
+    {
+      "id": 1,
+      "title": "Peers conectados ahora",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 0, "y": 0 },
+      "options": { "colorMode": "background", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": { "mode": "absolute", "steps": [{ "color": "red", "value": 0 }, { "color": "green", "value": 1 }] },
+          "mappings": []
+        }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "${DS_TIMESCALEDB}" },
+        "rawSql": "SELECT NOW() AS time, COUNT(*) AS value FROM wireguard_peers_latest WHERE connected = true",
+        "format": "table"
+      }]
+    },
+    {
+      "id": 2,
+      "title": "Total peers registrados",
+      "type": "stat",
+      "gridPos": { "h": 4, "w": 4, "x": 4, "y": 0 },
+      "options": { "colorMode": "value", "textMode": "value", "reduceOptions": { "calcs": ["lastNotNull"] } },
+      "fieldConfig": { "defaults": { "color": { "mode": "fixed", "fixedColor": "blue" } } },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "${DS_TIMESCALEDB}" },
+        "rawSql": "SELECT NOW() AS time, COUNT(*) AS value FROM wireguard_peers_latest",
+        "format": "table"
+      }]
+    },
+    {
+      "id": 3,
+      "title": "Estado actual de peers",
+      "type": "table",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 4 },
+      "options": { "sortBy": [{ "displayName": "Conectado", "desc": true }] },
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": [
+          {
+            "matcher": { "id": "byName", "options": "connected" },
+            "properties": [
+              { "id": "custom.displayMode", "value": "color-background" },
+              { "id": "mappings", "value": [
+                { "type": "value", "options": { "true":  { "text": "✓ Conectado", "color": "green", "index": 0 } } },
+                { "type": "value", "options": { "false": { "text": "✗ Inactivo",  "color": "red",   "index": 1 } } }
+              ]}
+            ]
+          },
+          { "matcher": { "id": "byName", "options": "tx_bytes" },
+            "properties": [{ "id": "unit", "value": "bytes" }] },
+          { "matcher": { "id": "byName", "options": "rx_bytes" },
+            "properties": [{ "id": "unit", "value": "bytes" }] },
+          { "matcher": { "id": "byName", "options": "seconds_since_handshake" },
+            "properties": [{ "id": "unit", "value": "s" }, { "id": "displayName", "value": "Handshake hace" }] }
+        ]
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "${DS_TIMESCALEDB}" },
+        "rawSql": "SELECT peer_name AS \"Peer\", peer_ip AS \"IP VPN\", endpoint AS \"Endpoint\", connected AS \"connected\", seconds_since_handshake, tx_bytes, rx_bytes, time AS \"Última muestra\" FROM wireguard_peers_latest ORDER BY connected DESC, peer_name ASC",
+        "format": "table"
+      }]
+    },
+    {
+      "id": 4,
+      "title": "Peers conectados — histórico",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 24, "x": 0, "y": 12 },
+      "options": { "tooltip": { "mode": "multi" } },
+      "fieldConfig": {
+        "defaults": { "custom": { "lineWidth": 2, "fillOpacity": 10 }, "min": 0 }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "${DS_TIMESCALEDB}" },
+        "rawSql": "SELECT time_bucket('1 minute', time) AS time, peer_name, MAX(CASE WHEN connected THEN 1 ELSE 0 END) AS value FROM wireguard_peers WHERE $__timeFilter(time) GROUP BY time_bucket('1 minute', time), peer_name ORDER BY 1",
+        "format": "time_series"
+      }]
+    },
+    {
+      "id": 5,
+      "title": "Tráfico TX por peer",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 0, "y": 20 },
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "${DS_TIMESCALEDB}" },
+        "rawSql": "SELECT time_bucket('1 minute', time) AS time, peer_name, MAX(tx_bytes) AS value FROM wireguard_peers WHERE $__timeFilter(time) GROUP BY time_bucket('1 minute', time), peer_name ORDER BY 1",
+        "format": "time_series"
+      }]
+    },
+    {
+      "id": 6,
+      "title": "Tráfico RX por peer",
+      "type": "timeseries",
+      "gridPos": { "h": 8, "w": 12, "x": 12, "y": 20 },
+      "fieldConfig": {
+        "defaults": { "unit": "bytes", "custom": { "lineWidth": 2 } }
+      },
+      "targets": [{
+        "datasource": { "type": "postgres", "uid": "${DS_TIMESCALEDB}" },
+        "rawSql": "SELECT time_bucket('1 minute', time) AS time, peer_name, MAX(rx_bytes) AS value FROM wireguard_peers WHERE $__timeFilter(time) GROUP BY time_bucket('1 minute', time), peer_name ORDER BY 1",
+        "format": "time_series"
+      }]
+    }
+  ]
+}
