@@ -1,14 +1,12 @@
 {
-  "name": "koiote-edge-frontend",
+  "name": "koiote-cloud-frontend",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "vite --host 0.0.0.0",
     "build": "vite build"
   },
-  "dependencies": {
-    "vue": "^3.4.21"
-  },
+  "dependencies": { "vue": "^3.4.21" },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.0.5",
     "vite": "^5.2.8"

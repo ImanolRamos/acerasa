@@ -1,23 +1,47 @@
 # ============================================================
-# Koiote Edge — docker-compose.yml
+# Koiote Cloud Stack — docker-compose.yml
+#
+# Stack completo en cloud:
+#   Traefik → Vue3 + Node.js → TimescaleDB
+#                            → Mosquitto (MQTT via VPN)
 #
 # Uso:
 #   cp .env.example .env && nano .env
 #   docker compose up -d --build
-#
-# Puertos expuestos al host:
-#   ${APP_PORT}  → frontend (Nginx → Vue3)
-#
-# Grafana y Prometheus NO se exponen al host.
-# Se accede a ellos únicamente a través de la VPN WireGuard
-# o redirigiendo un subdominio adicional en Traefik cloud.
 # ============================================================
 
 services:
 
   # ----------------------------------------------------------
-  # Frontend: Vue3 compilado servido por Nginx
-  # También hace de proxy inverso para /api → backend
+  # Traefik — proxy inverso HTTPS + Let's Encrypt
+  # ----------------------------------------------------------
+  traefik:
+    image: traefik:v3.3
+    container_name: koiote_${CLIENT_NAME}_traefik
+    restart: unless-stopped
+    command:
+      - "--api.dashboard=false"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=false"
+      - "--providers.docker.network=koiote_${CLIENT_NAME}_net"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web.http.redirections.entrypoint.to=websecure"
+      - "--entrypoints.web.http.redirections.entrypoint.scheme=https"
+      - "--entrypoints.websecure.address=:443"
+      - "--certificatesresolvers.letsencrypt.acme.email=${ACME_EMAIL}"
+      - "--certificatesresolvers.letsencrypt.acme.storage=/letsencrypt/acme.json"
+      - "--certificatesresolvers.letsencrypt.acme.httpchallenge.entrypoint=web"
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - traefik_acme:/letsencrypt
+    networks:
+      - koiote_net
+
+  # ----------------------------------------------------------
+  # Frontend — Vue3 compilado + Nginx
   # ----------------------------------------------------------
   frontend:
     build:
@@ -26,23 +50,19 @@ services:
         VITE_CLIENT_NAME: "${CLIENT_NAME}"
     container_name: koiote_${CLIENT_NAME}_frontend
     restart: unless-stopped
-    ports:
-      - "${APP_PORT}:80"
     depends_on:
-      backend:
-        condition: service_healthy
+      - backend
     networks:
       - koiote_net
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:80/"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 10s
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${CLIENT_NAME}-frontend.rule=Host(`${DOMAIN}`)"
+      - "traefik.http.routers.${CLIENT_NAME}-frontend.entrypoints=websecure"
+      - "traefik.http.routers.${CLIENT_NAME}-frontend.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${CLIENT_NAME}-frontend.loadbalancer.server.port=80"
 
   # ----------------------------------------------------------
-  # Backend: Node.js + Express
-  # API REST + analytics → TimescaleDB + /metrics → Prometheus
+  # Backend — Node.js + Express + MQTT subscriber
   # ----------------------------------------------------------
   backend:
     build:
@@ -53,23 +73,22 @@ services:
       CLIENT_NAME: "${CLIENT_NAME}"
       PORT: "3000"
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}"
+      MQTT_URL: "mqtt://mosquitto:1883"
+      MQTT_USER: "${MQTT_USER}"
+      MQTT_PASSWORD: "${MQTT_PASSWORD}"
       NODE_ENV: "production"
     expose:
       - "3000"
     depends_on:
       timescaledb:
         condition: service_healthy
+      mosquitto:
+        condition: service_started
     networks:
       - koiote_net
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:3000/api/health"]
-      interval: 30s
-      timeout: 5s
-      retries: 5
-      start_period: 20s
 
   # ----------------------------------------------------------
-  # TimescaleDB (PostgreSQL + extensión de series temporales)
+  # TimescaleDB — PostgreSQL + series temporales
   # ----------------------------------------------------------
   timescaledb:
     image: timescale/timescaledb:2.16.1-pg16
@@ -94,112 +113,58 @@ services:
       start_period: 30s
 
   # ----------------------------------------------------------
-  # Node Exporter — métricas del sistema operativo host
-  # CPU, RAM, disco, red, etc.
+  # Mosquitto — broker MQTT
+  # Accesible desde la VPN en 10.90.0.1:1883
+  # NO expuesto a internet
   # ----------------------------------------------------------
-  node-exporter:
-    image: prom/node-exporter:v1.8.2
-    container_name: koiote_${CLIENT_NAME}_node_exporter
+  mosquitto:
+    image: eclipse-mosquitto:2.0
+    container_name: koiote_${CLIENT_NAME}_mosquitto
     restart: unless-stopped
-    pid: host
-    command:
-      - "--path.rootfs=/host"
-      - "--collector.disable-defaults"
-      - "--collector.cpu"
-      - "--collector.meminfo"
-      - "--collector.diskstats"
-      - "--collector.filesystem"
-      - "--collector.loadavg"
-      - "--collector.netdev"
-      - "--collector.uname"
     volumes:
-      - /:/host:ro,rslave
-    expose:
-      - "9100"
+      - ./mosquitto/mosquitto.conf:/mosquitto/config/mosquitto.conf:ro
+      - ./mosquitto/passwd:/mosquitto/config/passwd:ro
+      - mosquitto_data:/mosquitto/data
+      - mosquitto_log:/mosquitto/log
+    ports:
+      # Solo escucha en la IP WireGuard — no expuesto a internet
+      - "${CLOUD_WG_IP}:1883:1883"
     networks:
       - koiote_net
 
   # ----------------------------------------------------------
-  # cAdvisor — métricas de contenedores Docker
-  # ----------------------------------------------------------
-  cadvisor:
-    image: gcr.io/cadvisor/cadvisor:v0.49.1
-    container_name: koiote_${CLIENT_NAME}_cadvisor
-    restart: unless-stopped
-    privileged: true
-    volumes:
-      - /:/rootfs:ro
-      - /var/run:/var/run:ro
-      - /sys:/sys:ro
-      - /var/lib/docker/:/var/lib/docker:ro
-    expose:
-      - "8080"
-    networks:
-      - koiote_net
-
-  # ----------------------------------------------------------
-  # Prometheus — scraping y almacenamiento de métricas
-  # NO expuesto al host — acceso solo por VPN o Grafana interno
-  # ----------------------------------------------------------
-  prometheus:
-    image: prom/prometheus:v2.53.1
-    container_name: koiote_${CLIENT_NAME}_prometheus
-    restart: unless-stopped
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-      - "--storage.tsdb.path=/prometheus"
-      - "--storage.tsdb.retention.time=30d"
-      - "--web.enable-lifecycle"
-    volumes:
-      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
-      - prometheus_data:/prometheus
-    expose:
-      - "9090"
-    networks:
-      - koiote_net
-    healthcheck:
-      test: ["CMD", "wget", "-qO-", "http://localhost:9090/-/healthy"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-
-  # ----------------------------------------------------------
-  # Grafana — visualización de métricas
-  # Acceso: http://EDGE_WG_IP:GRAFANA_PORT (solo por VPN)
-  # O bien añade una ruta Traefik adicional en cloud.
+  # Grafana — dashboards de métricas y datos MQTT
   # ----------------------------------------------------------
   grafana:
     image: grafana/grafana:11.1.4
     container_name: koiote_${CLIENT_NAME}_grafana
     restart: unless-stopped
-    ports:
-      # Solo escucha en la IP de WireGuard — no en 0.0.0.0
-      - "${EDGE_WG_IP}:${GRAFANA_PORT}:3000"
     environment:
       GF_SECURITY_ADMIN_USER: "${GRAFANA_ADMIN_USER}"
       GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD}"
-      GF_SERVER_ROOT_URL: "%(protocol)s://%(domain)s:%(http_port)s/"
+      GF_SERVER_ROOT_URL: "https://grafana.${DOMAIN}/"
       GF_ANALYTICS_REPORTING_ENABLED: "false"
       GF_ANALYTICS_CHECK_FOR_UPDATES: "false"
     volumes:
       - grafana_data:/var/lib/grafana
       - ./grafana/provisioning:/etc/grafana/provisioning:ro
-    depends_on:
-      prometheus:
-        condition: service_healthy
     networks:
       - koiote_net
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.${CLIENT_NAME}-grafana.rule=Host(`grafana.${DOMAIN}`)"
+      - "traefik.http.routers.${CLIENT_NAME}-grafana.entrypoints=websecure"
+      - "traefik.http.routers.${CLIENT_NAME}-grafana.tls.certresolver=letsencrypt"
+      - "traefik.http.services.${CLIENT_NAME}-grafana.loadbalancer.server.port=3000"
 
-# ----------------------------------------------------------
-# Red interna Docker — todos los contenedores se comunican
-# por nombre de servicio. Nada sale al exterior salvo
-# los puertos mapeados explícitamente arriba.
-# ----------------------------------------------------------
 networks:
   koiote_net:
+    name: koiote_${CLIENT_NAME}_net
     driver: bridge
 
 volumes:
   timescaledb_data:
   grafana_data:
-  prometheus_data:
+  mosquitto_data:
+  mosquitto_log:
+  traefik_acme:
