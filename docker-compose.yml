@@ -48,6 +48,7 @@ services:
       context: ./frontend
       args:
         VITE_CLIENT_NAME: "${CLIENT_NAME}"
+        VITE_DOMAIN: "${DOMAIN}"
     container_name: koiote_${CLIENT_NAME}_frontend
     restart: unless-stopped
     depends_on:
