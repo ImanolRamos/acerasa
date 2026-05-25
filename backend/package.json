@@ -1,0 +1,16 @@
+{
+  "name": "koiote-cloud-backend",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "cors": "2.8.5",
+    "express": "4.18.3",
+    "mqtt": "5.10.1",
+    "pg": "8.11.5",
+    "prom-client": "15.1.3"
+  }
+}
