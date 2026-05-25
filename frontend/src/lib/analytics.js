@@ -1,6 +1,4 @@
-const sessionId = typeof crypto.randomUUID === 'function'
-  ? crypto.randomUUID()
-  : Math.random().toString(36).slice(2) + Date.now().toString(36)
+const sessionId = crypto.randomUUID()
 const pageOpenedAt = Date.now()
 
 export async function trackEvent(eventType, extra = {}) {
@@ -15,7 +13,9 @@ export async function trackEvent(eventType, extra = {}) {
         metadata: { ...extra, user_agent: navigator.userAgent }
       })
     })
-  } catch (e) {}
+  } catch (e) {
+    console.warn('Analytics disabled', e)
+  }
 }
 
 export function registerScreenTimeTracking() {

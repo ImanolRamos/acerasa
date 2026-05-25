@@ -1,9 +1,7 @@
 FROM node:20-alpine AS build
 WORKDIR /app
 ARG VITE_CLIENT_NAME=Koiote
-ARG VITE_DOMAIN=koiote.es
 ENV VITE_CLIENT_NAME=$VITE_CLIENT_NAME
-ENV VITE_DOMAIN=$VITE_DOMAIN
 COPY package*.json ./
 RUN npm install
 COPY . .

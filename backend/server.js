@@ -1,15 +1,16 @@
 const express = require('express');
 const cors = require('cors');
-const mqtt = require('mqtt');
-const client_prom = require('prom-client');
+const client = require('prom-client');
 const { Pool } = require('pg');
 
 const app = express();
 const port = process.env.PORT || 3000;
-const clientName = process.env.CLIENT_NAME || 'koiote';
+const clientName = process.env.CLIENT_NAME || 'koiote-client';
 
 // ============================================================
-// TIMESCALEDB
+// TIMESCALEDB — pool con reintentos al arrancar
+// El healthcheck del docker-compose garantiza que timescaledb
+// esté listo, pero añadimos reintentos defensivos igualmente.
 // ============================================================
 
 const pool = new Pool({
@@ -30,77 +31,8 @@ async function waitForDb(retries = 10, delayMs = 3000) {
       if (i < retries) await new Promise(r => setTimeout(r, delayMs));
     }
   }
-  console.error('[DB] No se pudo conectar. Saliendo.');
+  console.error('[DB] No se pudo conectar a TimescaleDB. Saliendo.');
   process.exit(1);
-}
-
-// ============================================================
-// MQTT — suscripción a todos los topics del cliente
-// ============================================================
-
-let mqttConnected = false;
-let mqttMessagesTotal = 0;
-
-function connectMqtt() {
-  const mqttUrl = process.env.MQTT_URL || 'mqtt://mosquitto:1883';
-  const mqttClient = mqtt.connect(mqttUrl, {
-    username: process.env.MQTT_USER,
-    password: process.env.MQTT_PASSWORD,
-    clientId: `koiote-backend-${clientName}-${Date.now()}`,
-    reconnectPeriod: 5000,
-    connectTimeout: 10000,
-  });
-
-  mqttClient.on('connect', () => {
-    mqttConnected = true;
-    console.log(`[MQTT] Conectado a ${mqttUrl}`);
-    // Suscribirse a todos los topics del cliente
-    mqttClient.subscribe(`${clientName}/#`, { qos: 1 }, (err) => {
-      if (err) console.error('[MQTT] Error suscripción:', err.message);
-      else console.log(`[MQTT] Suscrito a ${clientName}/#`);
-    });
-    // También suscribirse al topic genérico koiote/
-    mqttClient.subscribe('koiote/#', { qos: 1 });
-  });
-
-  mqttClient.on('message', async (topic, message) => {
-    mqttMessagesTotal++;
-    const raw = message.toString();
-    let payload = {};
-    try {
-      payload = JSON.parse(raw);
-    } catch (_) {
-      payload = { value: raw };
-    }
-
-    console.log(`[MQTT] ${topic}: ${raw.slice(0, 100)}`);
-
-    try {
-      await pool.query(
-        `INSERT INTO mqtt_messages (client_name, topic, payload, raw)
-         VALUES ($1, $2, $3, $4)`,
-        [clientName, topic, payload, raw]
-      );
-    } catch (err) {
-      console.error('[MQTT] Error guardando en DB:', err.message);
-    }
-  });
-
-  mqttClient.on('error', (err) => {
-    console.error('[MQTT] Error:', err.message);
-    mqttConnected = false;
-  });
-
-  mqttClient.on('reconnect', () => {
-    console.log('[MQTT] Reconectando...');
-    mqttConnected = false;
-  });
-
-  mqttClient.on('offline', () => {
-    mqttConnected = false;
-  });
-
-  return mqttClient;
 }
 
 // ============================================================
@@ -110,100 +42,175 @@ function connectMqtt() {
 app.use(cors());
 app.use(express.json({ limit: '50kb' }));
 
-// ── Health ───────────────────────────────────────────────────
+// ============================================================
+// PROMETHEUS — métricas automáticas + contador HTTP
+// ============================================================
+
+client.collectDefaultMetrics({ prefix: 'koiote_' });
+
+const httpRequests = new client.Counter({
+  name: 'koiote_http_requests_total',
+  help: 'Total de peticiones HTTP',
+  labelNames: ['method', 'route', 'status'],
+});
+
+const dbQueryDuration = new client.Histogram({
+  name: 'koiote_db_query_duration_seconds',
+  help: 'Duración de consultas a TimescaleDB',
+  labelNames: ['query'],
+  buckets: [0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1],
+});
+
+// Middleware contador HTTP
+app.use((req, res, next) => {
+  res.on('finish', () => {
+    httpRequests.inc({
+      method: req.method,
+      route: req.route?.path || req.path,
+      status: res.statusCode,
+    });
+  });
+  next();
+});
+
+// ============================================================
+// HEALTH — usado por Docker healthcheck
+// ============================================================
+
 app.get('/api/health', async (req, res) => {
   let dbOk = false;
-  try { await pool.query('SELECT 1'); dbOk = true; } catch (_) {}
-  res.status(dbOk ? 200 : 503).json({
+  try {
+    await pool.query('SELECT 1');
+    dbOk = true;
+  } catch (_) {}
+
+  const status = dbOk ? 200 : 503;
+  res.status(status).json({
     ok: dbOk,
-    service: 'koiote-cloud-backend',
+    service: 'koiote-edge-backend',
     client: clientName,
     db: dbOk ? 'ok' : 'unavailable',
-    mqtt: mqttConnected ? 'ok' : 'disconnected',
     timestamp: new Date().toISOString(),
   });
 });
 
-// ── Info ─────────────────────────────────────────────────────
+// ============================================================
+// INFO
+// ============================================================
+
 app.get('/api/info', (req, res) => {
   res.json({
     client: clientName,
     backend: 'nodejs',
-    version: '1.0.0',
+    framework: 'express',
+    version: process.env.npm_package_version || '1.0.0',
     status: 'running',
-    mqtt_connected: mqttConnected,
-    mqtt_messages_total: mqttMessagesTotal,
   });
 });
 
-// ── MQTT — últimos mensajes por topic ─────────────────────────
-app.get('/api/mqtt/latest', async (req, res) => {
-  try {
-    const result = await pool.query(
-      `SELECT time, topic, payload, raw
-       FROM mqtt_latest
-       WHERE client_name = $1
-       ORDER BY time DESC`,
-      [clientName]
-    );
-    res.json({ ok: true, data: result.rows });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
+// ============================================================
+// ANALYTICS — guardar eventos del frontend en TimescaleDB
+// POST /api/events
+// Body: { session_id, user_id?, event_type, page?, element?, metadata? }
+// ============================================================
 
-// ── MQTT — histórico de un topic ──────────────────────────────
-app.get('/api/mqtt/history', async (req, res) => {
-  const { topic, limit = 100, from, to } = req.query;
-  if (!topic) return res.status(400).json({ ok: false, error: 'topic requerido' });
-  try {
-    const result = await pool.query(
-      `SELECT time, topic, payload, raw
-       FROM mqtt_messages
-       WHERE client_name = $1
-         AND topic = $2
-         AND time >= COALESCE($3::timestamptz, NOW() - INTERVAL '24 hours')
-         AND time <= COALESCE($4::timestamptz, NOW())
-       ORDER BY time DESC
-       LIMIT $5`,
-      [clientName, topic, from || null, to || null, parseInt(limit)]
-    );
-    res.json({ ok: true, data: result.rows });
-  } catch (err) {
-    res.status(500).json({ ok: false, error: err.message });
-  }
-});
-
-// ── Analytics frontend ────────────────────────────────────────
 app.post('/api/events', async (req, res) => {
   const { session_id, user_id, event_type, page, element, metadata } = req.body;
-  if (!event_type) return res.status(400).json({ ok: false, error: 'event_type requerido' });
+
+  if (!event_type || typeof event_type !== 'string') {
+    return res.status(400).json({ ok: false, error: 'event_type requerido' });
+  }
+
+  const end = dbQueryDuration.startTimer({ query: 'insert_event' });
   try {
     await pool.query(
       `INSERT INTO frontend_events
         (client_name, session_id, user_id, event_type, page, element, metadata)
        VALUES ($1, $2, $3, $4, $5, $6, $7)`,
-      [clientName, session_id || null, user_id || null, event_type,
-       page || null, element || null, typeof metadata === 'object' ? metadata : {}]
+      [
+        clientName,
+        session_id || null,
+        user_id || null,
+        event_type,
+        page || null,
+        element || null,
+        typeof metadata === 'object' ? metadata : {},
+      ]
     );
+    end();
     res.json({ ok: true });
-  } catch (err) {
+  } catch (error) {
+    end();
+    console.error('[events] Error guardando evento:', error.message);
     res.status(500).json({ ok: false });
   }
 });
 
-// ── Prometheus metrics ────────────────────────────────────────
-client_prom.collectDefaultMetrics({ prefix: 'koiote_' });
+// ============================================================
+// MÉTRICAS DE SISTEMA (snapshot desde el backend)
+// GET /api/metrics/system
+// Devuelve CPU, RAM, disco leídos de /proc (dentro del contenedor)
+// — complementa node-exporter con contexto de aplicación.
+// ============================================================
 
-const mqttMsgCounter = new client_prom.Counter({
-  name: 'koiote_mqtt_messages_total',
-  help: 'Total mensajes MQTT recibidos',
-  labelNames: ['topic'],
+app.get('/api/metrics/system', async (req, res) => {
+  try {
+    const { execSync } = require('child_process');
+
+    // CPU — lectura de /proc/stat (dos snapshots de 100ms)
+    const cpuPct = await getCpuPercent();
+
+    // RAM — /proc/meminfo
+    const memRaw = require('fs').readFileSync('/proc/meminfo', 'utf8');
+    const memTotal = parseInt(memRaw.match(/MemTotal:\s+(\d+)/)?.[1] || 0);
+    const memAvail = parseInt(memRaw.match(/MemAvailable:\s+(\d+)/)?.[1] || 0);
+    const memPct = memTotal ? ((memTotal - memAvail) / memTotal * 100).toFixed(1) : null;
+
+    // Disco — df sobre el rootfs del host (montado en node-exporter)
+    let diskPct = null;
+    try {
+      const dfOut = execSync("df / --output=pcent | tail -1").toString().trim();
+      diskPct = parseFloat(dfOut.replace('%', ''));
+    } catch (_) {}
+
+    res.json({
+      ok: true,
+      client: clientName,
+      timestamp: new Date().toISOString(),
+      cpu_pct: cpuPct,
+      mem_pct: parseFloat(memPct),
+      disk_pct: diskPct,
+    });
+  } catch (error) {
+    console.error('[system] Error leyendo métricas:', error.message);
+    res.status(500).json({ ok: false, error: error.message });
+  }
 });
 
+function getCpuPercent() {
+  return new Promise(resolve => {
+    const fs = require('fs');
+    const read = () => fs.readFileSync('/proc/stat', 'utf8').split('\n')[0].split(/\s+/).slice(1).map(Number);
+    const s1 = read();
+    setTimeout(() => {
+      const s2 = read();
+      const idle1 = s1[3] + s1[4];
+      const idle2 = s2[3] + s2[4];
+      const total1 = s1.reduce((a, b) => a + b, 0);
+      const total2 = s2.reduce((a, b) => a + b, 0);
+      const pct = (1 - (idle2 - idle1) / (total2 - total1)) * 100;
+      resolve(parseFloat(pct.toFixed(1)));
+    }, 100);
+  });
+}
+
+// ============================================================
+// PROMETHEUS METRICS ENDPOINT — scrapeado por Prometheus
+// ============================================================
+
 app.get('/metrics', async (req, res) => {
-  res.set('Content-Type', client_prom.register.contentType);
-  res.end(await client_prom.register.metrics());
+  res.set('Content-Type', client.register.contentType);
+  res.end(await client.register.metrics());
 });
 
 // ============================================================
@@ -212,9 +219,9 @@ app.get('/metrics', async (req, res) => {
 
 async function main() {
   await waitForDb();
-  connectMqtt();
+
   app.listen(port, '0.0.0.0', () => {
-    console.log(`[OK] Koiote cloud backend — puerto ${port} — cliente: ${clientName}`);
+    console.log(`[OK] Koiote backend corriendo en puerto ${port} — cliente: ${clientName}`);
   });
 }
 
