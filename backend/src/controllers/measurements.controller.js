@@ -49,7 +49,7 @@ async function getMeasurementHistory(req, res) {
   }
 
   try {
-    const data = await measurementsRepository.findMeasurementHistory({
+      const data = await measurementsRepository.findMeasurementHistory({
       variableId: variable_id ? Number(variable_id) : null,
       variableName: variable || null,
       from: from || null,
@@ -69,8 +69,51 @@ async function getMeasurementHistory(req, res) {
   }
 }
 
+
+
+async function getAverageHistory(req, res) {
+  try {
+    const variables = String(req.query.variables || "")
+      .split(",")
+      .map((v) => v.trim())
+      .filter(Boolean);
+
+    const bucketMinutes = Number(req.query.bucket_minutes || 1);
+
+    if (variables.length === 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "Debes indicar al menos una variable",
+      });
+    }
+
+    if (!Number.isFinite(bucketMinutes) || bucketMinutes <= 0) {
+      return res.status(400).json({
+        ok: false,
+        error: "bucket_minutes debe ser un número positivo",
+      });
+    }
+
+    const data = await measurementsRepository.getAverageHistory({
+      variables,
+      bucketMinutes,
+    });
+
+    res.json({
+      ok: true,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+}
+
 module.exports = {
   getVariables,
   getLatestMeasurements,
   getMeasurementHistory,
+  getAverageHistory,
 };

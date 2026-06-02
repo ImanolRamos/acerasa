@@ -65,9 +65,31 @@ async function findMeasurementHistory({ variableId, variableName, from, to, limi
 
   return result.rows;
 }
+async function getAverageHistory({ variables, bucketMinutes }) {
+  const result = await pool.query(
+    `
+    SELECT
+      time_bucket(($2::int || ' minutes')::interval, m.created_at) AS time,
+      mv.id AS variable_id,
+      mv.new_name AS variable,
+      mv.unit,
+      AVG(m.value) AS value
+    FROM measurements m
+    JOIN measurement_variables mv ON mv.id = m.variable_id
+    WHERE mv.active = TRUE
+      AND mv.new_name = ANY($1::text[])
+    GROUP BY time, mv.id, mv.new_name, mv.unit
+    ORDER BY time ASC, mv.id ASC;
+    `,
+    [variables, bucketMinutes]
+  );
+
+  return result.rows;
+}
 
 module.exports = {
   findVariables,
   findLatestMeasurements,
   findMeasurementHistory,
+  getAverageHistory,
 };
