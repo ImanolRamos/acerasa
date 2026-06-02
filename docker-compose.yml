@@ -160,6 +160,74 @@ services:
       - "traefik.http.routers.${CLIENT_NAME}-grafana.tls.certresolver=letsencrypt"
       - "traefik.http.services.${CLIENT_NAME}-grafana.loadbalancer.server.port=3000"
 
+  # ----------------------------------------------------------
+  # Redis — cola intermedia entre MQTT y TimescaleDB
+  # ----------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: koiote_${CLIENT_NAME}_redis
+    restart: unless-stopped
+    expose:
+      - "6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - koiote_net
+
+  # ----------------------------------------------------------
+  # Puller — lector MQTT → Redis
+  # ----------------------------------------------------------
+  puller:
+    build:
+      context: ./services/puller
+    container_name: koiote_${CLIENT_NAME}_puller
+    restart: unless-stopped
+    environment:
+      CLIENT_NAME: "${CLIENT_NAME}"
+      MQTT_HOST: "mosquitto"
+      MQTT_PORT: "1883"
+      MQTT_USERNAME: "${MQTT_USER}"
+      MQTT_PASSWORD: "${MQTT_PASSWORD}"
+      MQTT_TOPIC: "${CLIENT_NAME}/#"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_QUEUE: "${REDIS_QUEUE}"
+    depends_on:
+      mosquitto:
+        condition: service_started
+      redis:
+        condition: service_started
+    networks:
+      - koiote_net
+
+  # ----------------------------------------------------------
+  # Injector — Redis → TimescaleDB
+  # ----------------------------------------------------------
+  injector:
+    build:
+      context: ./services/injector
+    container_name: koiote_${CLIENT_NAME}_injector
+    restart: unless-stopped
+    environment:
+      CLIENT_NAME: "${CLIENT_NAME}"
+      REDIS_HOST: "redis"
+      REDIS_PORT: "6379"
+      REDIS_QUEUE: "${REDIS_QUEUE}"
+      REDIS_PROCESSING_QUEUE: "${REDIS_PROCESSING_QUEUE}"
+      POSTGRES_HOST: "timescaledb"
+      POSTGRES_PORT: "5432"
+      POSTGRES_DB: "${POSTGRES_DB}"
+      POSTGRES_USER: "${POSTGRES_USER}"
+      POSTGRES_PASSWORD: "${POSTGRES_PASSWORD}"
+      DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}"
+    depends_on:
+      redis:
+        condition: service_started
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - koiote_net
+
 networks:
   koiote_net:
     name: koiote_${CLIENT_NAME}_net
@@ -171,3 +239,4 @@ volumes:
   mosquitto_data:
   mosquitto_log:
   traefik_acme:
+  redis_data:
