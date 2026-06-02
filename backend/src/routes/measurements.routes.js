@@ -5,6 +5,8 @@ const router = express.Router();
 
 router.get("/variables", measurementsController.getVariables);
 router.get("/latest", measurementsController.getLatestMeasurements);
+
 router.get("/history", measurementsController.getMeasurementHistory);
+router.get("/history/average", measurementsController.getAverageHistory);
 
 module.exports = router;
