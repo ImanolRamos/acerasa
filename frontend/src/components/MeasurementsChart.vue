@@ -116,7 +116,9 @@ const COLORS = [
 ]
 
 const chartData = computed(() => {
-  const labels = [...new Set(historyData.value.map((row) => formatLabel(row.time)))]
+  const labels = [
+    ...new Set(historyData.value.map((row) => formatLabel(row.time)))
+  ]
 
   const datasets = selectedVariables.value.map((variableName, index) => {
     const rows = historyData.value.filter(
@@ -127,17 +129,26 @@ const chartData = computed(() => {
 
     return {
       label: variableName,
+
       data: labels.map((label) => {
         const row = rows.find(
           (item) => formatLabel(item.time) === label
         )
         return row ? row.value : null
       }),
+
       borderColor: color,
       backgroundColor: color,
-      pointRadius: 2,
+
+      pointBackgroundColor: color,
+      pointBorderColor: color,
+
+      pointRadius: 3,
+      pointHoverRadius: 5,
+
       borderWidth: 2,
       tension: 0.25,
+      fill: false,
     }
   })
 
