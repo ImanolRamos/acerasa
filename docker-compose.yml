@@ -83,8 +83,6 @@ services:
     depends_on:
       timescaledb:
         condition: service_healthy
-      mosquitto:
-        condition: service_started
     networks:
       - koiote_net
 
