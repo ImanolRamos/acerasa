@@ -1,1 +1,87 @@
 *.conf
+# =========================
+# Entorno / secretos
+# =========================
+.env
+.env.*
+!.env.example
+
+# Credenciales / VPN / certificados
+*.conf
+*.ovpn
+*.key
+*.pem
+*.crt
+*.csr
+*.p12
+*.pfx
+wg*.conf
+*-vpn.conf
+*_vpn.conf
+
+# Mosquitto password file
+mosquitto/passwd
+cloud-stack/mosquitto/passwd
+
+# Let's Encrypt / Traefik
+letsencrypt/
+acme.json
+traefik_acme/
+
+# =========================
+# Python
+# =========================
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+.envrc
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# =========================
+# Node / frontend / backend
+# =========================
+node_modules/
+dist/
+build/
+.npm/
+.cache/
+coverage/
+
+# =========================
+# Docker / datos persistentes
+# =========================
+data/
+log/
+logs/
+*.log
+
+# Volúmenes locales si existen como carpetas
+timescaledb_data/
+redis_data/
+grafana_data/
+mosquitto_data/
+mosquitto_log/
+
+# Dumps / backups / zips
+*.zip
+*.tar
+*.tar.gz
+*.sql.gz
+*.dump
+*.backup
+
+
+# =========================
+# Sistema / editor
+# =========================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
