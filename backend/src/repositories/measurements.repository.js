@@ -73,7 +73,7 @@ async function getAverageHistory({ variables, bucketMinutes }) {
       mv.id AS variable_id,
       mv.new_name AS variable,
       mv.unit,
-      AVG(m.value) AS value
+      ROUND(AVG(m.value)::numeric, 3)::double precision AS value
     FROM measurements m
     JOIN measurement_variables mv ON mv.id = m.variable_id
     WHERE mv.active = TRUE
