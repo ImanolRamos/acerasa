@@ -152,4 +152,20 @@ body { margin: 0; font-family: Arial, sans-serif; background: #f0f4f8; color: #1
 .links { display: flex; gap: 12px; }
 .btn-link { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
 .grafana { background: #f97316; color: white; }
+
+.chart-card {
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.chart-title {
+  color: #1b3a5c;
+  font-size: 16px;
+  font-weight: 700;
+}
+
+.chart-wrapper {
+  height: 420px;
+  margin-top: 16px;
+}
 </style>

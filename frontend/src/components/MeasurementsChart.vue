@@ -1,47 +1,75 @@
 <template>
   <section class="section">
-    <h2>Gráfica de mediciones</h2>
+    <v-card class="chart-card" rounded="xl" elevation="0">
+      <v-card-title class="chart-title">
+        Gráfica de mediciones
+      </v-card-title>
 
-    <div class="chart-panel">
-      <div class="chart-controls">
-        <div>
-          <label class="control-label">Media</label>
-          <select v-model.number="bucketMinutes" class="select">
-            <option :value="1">1 minuto</option>
-            <option :value="5">5 minutos</option>
-            <option :value="15">15 minutos</option>
-            <option :value="60">1 hora</option>
-          </select>
+      <v-card-text>
+        <v-row dense>
+          <v-col cols="12" md="8">
+            <v-autocomplete
+              v-model="selectedVariables"
+              :items="variables"
+              item-title="new_name"
+              item-value="new_name"
+              label="Variables"
+              multiple
+              chips
+              closable-chips
+              density="comfortable"
+              variant="outlined"
+            />
+          </v-col>
+
+          <v-col cols="12" md="2">
+            <v-text-field
+              v-model.number="bucketMinutes"
+              label="Media cada"
+              type="number"
+              min="1"
+              suffix="min"
+              density="comfortable"
+              variant="outlined"
+            />
+          </v-col>
+
+          <v-col cols="12" md="2">
+            <v-btn
+              block
+              height="48"
+              color="primary"
+              :loading="loading"
+              :disabled="selectedVariables.length === 0"
+              @click="loadChart"
+            >
+              Ver gráfica
+            </v-btn>
+          </v-col>
+        </v-row>
+
+        <v-alert
+          v-if="error"
+          type="error"
+          variant="tonal"
+          class="mb-4"
+        >
+          {{ error }}
+        </v-alert>
+
+        <div v-if="chartData.datasets.length > 0" class="chart-wrapper">
+          <Line :data="chartData" :options="chartOptions" />
         </div>
 
-        <button class="btn-primary" :disabled="selectedVariables.length === 0 || loading" @click="loadChart">
-          {{ loading ? 'Cargando...' : 'Ver gráfica' }}
-        </button>
-      </div>
-
-      <div class="variables-list">
-        <label v-for="variable in variables" :key="variable.id" class="variable-option">
-          <input
-            v-model="selectedVariables"
-            type="checkbox"
-            :value="variable.new_name"
-          >
-          <span>{{ variable.new_name }} <small>({{ variable.unit }})</small></span>
-        </label>
-      </div>
-
-      <div v-if="error" class="error-box">
-        {{ error }}
-      </div>
-
-      <div v-if="chartData.datasets.length > 0" class="chart-wrapper">
-        <Line :data="chartData" :options="chartOptions" />
-      </div>
-
-      <div v-else class="empty">
-        Selecciona una o varias variables y pulsa “Ver gráfica”.
-      </div>
-    </div>
+        <v-alert
+          v-else
+          type="info"
+          variant="tonal"
+        >
+          Selecciona una o varias variables, indica cada cuántos minutos quieres la media y pulsa “Ver gráfica”.
+        </v-alert>
+      </v-card-text>
+    </v-card>
   </section>
 </template>
 
