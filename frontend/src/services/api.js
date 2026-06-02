@@ -12,3 +12,18 @@ export function getHealth() {
 export function getInfo() {
   return api.get('/info').then((response) => response.data)
 }
+
+export function getMeasurementVariables() {
+  return api.get('/measurements/variables').then((response) => response.data)
+}
+
+export function getAverageHistory({ variables, bucketMinutes }) {
+  return api
+    .get('/measurements/history/average', {
+      params: {
+        variables: variables.join(','),
+        bucket_minutes: bucketMinutes,
+      },
+    })
+    .then((response) => response.data)
+}

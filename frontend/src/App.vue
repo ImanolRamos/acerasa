@@ -33,18 +33,7 @@
 
       <!-- Topics MQTT -->
       <section class="section">
-        <h2>Datos MQTT en tiempo real</h2>
-        <div v-if="mqttData.length === 0" class="empty">
-          Sin datos MQTT aún. El Teltonika publicará en:<br>
-          <code>{{ clientName }}/#</code>
-        </div>
-        <div v-else class="topics-grid">
-          <div v-for="row in mqttData" :key="row.topic" class="topic-card">
-            <div class="topic-name">{{ row.topic }}</div>
-            <div class="topic-value">{{ formatPayload(row.payload) }}</div>
-            <div class="topic-time">{{ formatTime(row.time) }}</div>
-          </div>
-        </div>
+        <MeasurementsChart />
       </section>
 
       <!-- Links -->
@@ -64,6 +53,7 @@ import { trackEvent, registerScreenTimeTracking } from './lib/analytics.js'
 import { getHealth, getInfo } from './services/api.js'
 
 import AppNavbar from './components/AppNavbar.vue'
+import MeasurementsChart from './components/MeasurementsChart.vue'
 
 const clientName = import.meta.env.VITE_CLIENT_NAME || 'Koiote'
 const domain = import.meta.env.VITE_DOMAIN || ''
