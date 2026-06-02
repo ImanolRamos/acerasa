@@ -1,24 +1,12 @@
 <template>
   <main class="page">
-    <header class="topbar">
-      <div class="topbar-left">
-        <div class="logo">K</div>
-        <div>
-          <div class="client-name">{{ clientName }}</div>
-          <div class="subtitle">Koiote Cloud — Panel MQTT</div>
-        </div>
-      </div>
-      <div class="topbar-right">
-        <span class="badge" :class="info.mqtt_connected ? 'badge-ok' : 'badge-error'">
-          MQTT {{ info.mqtt_connected ? 'Online' : 'Offline' }}
-        </span>
-        <span class="badge" :class="health.ok ? 'badge-ok' : 'badge-error'">
-          API {{ health.ok ? 'Online' : 'Offline' }}
-        </span>
-        <button class="btn-refresh" @click="refresh">↺ Actualizar</button>
-      </div>
-    </header>
-
+    
+    <AppNavbar
+      :client-name="clientName"
+      :mqtt-connected="Boolean(info.mqtt_connected)"
+      :api-online="Boolean(health.ok)"
+      @refresh="refresh"
+    />
     <div class="content">
 
       <!-- Stats -->
@@ -73,6 +61,9 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 import { trackEvent, registerScreenTimeTracking } from './lib/analytics.js'
+import { getHealth, getInfo } from './services/api.js'
+
+import AppNavbar from './components/AppNavbar.vue'
 
 const clientName = import.meta.env.VITE_CLIENT_NAME || 'Koiote'
 const domain = import.meta.env.VITE_DOMAIN || ''
@@ -85,14 +76,13 @@ let timer = null
 
 async function refresh() {
   try {
-    const [h, i, m] = await Promise.all([
-      fetch('/api/health').then(r => r.json()),
-      fetch('/api/info').then(r => r.json()),
-      fetch('/api/mqtt/latest').then(r => r.json()),
+    const [h, i] = await Promise.all([
+      getHealth(),
+      getInfo(),
     ])
     health.value = h
     info.value = i
-    mqttData.value = m.data || []
+    mqttData.value = []
     lastCheck.value = new Date().toLocaleTimeString('es')
   } catch (e) {
     health.value = { ok: false }
