@@ -104,19 +104,39 @@ const bucketMinutes = ref(1)
 const historyData = ref([])
 const loading = ref(false)
 const error = ref('')
+const COLORS = [
+  '#1976d2', // azul
+  '#2e7d32', // verde
+  '#d32f2f', // rojo
+  '#ed6c02', // naranja
+  '#9c27b0', // morado
+  '#00acc1', // cyan
+  '#fbc02d', // amarillo
+  '#5d4037', // marrón
+]
 
 const chartData = computed(() => {
   const labels = [...new Set(historyData.value.map((row) => formatLabel(row.time)))]
 
-  const datasets = selectedVariables.value.map((variableName) => {
-    const rows = historyData.value.filter((row) => row.variable === variableName)
+  const datasets = selectedVariables.value.map((variableName, index) => {
+    const rows = historyData.value.filter(
+      (row) => row.variable === variableName
+    )
+
+    const color = COLORS[index % COLORS.length]
 
     return {
       label: variableName,
       data: labels.map((label) => {
-        const row = rows.find((item) => formatLabel(item.time) === label)
+        const row = rows.find(
+          (item) => formatLabel(item.time) === label
+        )
         return row ? row.value : null
       }),
+      borderColor: color,
+      backgroundColor: color,
+      pointRadius: 2,
+      borderWidth: 2,
       tension: 0.25,
     }
   })
