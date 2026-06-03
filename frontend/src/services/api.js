@@ -17,7 +17,7 @@ export function getMeasurementVariables() {
   return api.get('/measurements/variables').then((response) => response.data)
 }
 
-export function getAverageHistory({ variables, bucketMinutes }) {
+export function getAverageHistory({ variables, bucketMinutes, startDate, endDate }) {
   return api
     .get('/measurements/history/average', {
       params: {
