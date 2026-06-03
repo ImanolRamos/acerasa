@@ -17,12 +17,20 @@
         API {{ apiOnline ? 'Online' : 'Offline' }}
       </span>
 
-      <button class="btn-refresh" @click="$emit('refresh')">↺ Actualizar</button>
+      <button class="btn-refresh" @click="$emit('refresh')">
+        ↺ Actualizar
+      </button>
+
+      <v-btn size="small" variant="outlined" @click="logout">
+        Salir
+      </v-btn>
     </div>
   </header>
 </template>
 
 <script setup>
+import { useRouter } from 'vue-router'
+
 defineProps({
   clientName: {
     type: String,
@@ -39,4 +47,12 @@ defineProps({
 })
 
 defineEmits(['refresh'])
+
+const router = useRouter()
+
+function logout() {
+  localStorage.removeItem('token')
+  localStorage.removeItem('user')
+  router.push('/login')
+}
 </script>

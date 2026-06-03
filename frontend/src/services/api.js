@@ -29,3 +29,22 @@ export function getAverageHistory({ variables, bucketMinutes, startDate, endDate
     })
     .then((response) => response.data)
 }
+
+export function login({ usernameOrEmail, password }) {
+  return api
+    .post('/login', {
+      usernameOrEmail,
+      password,
+    })
+    .then((response) => response.data)
+}
+
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token')
+
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`
+  }
+
+  return config
+})
