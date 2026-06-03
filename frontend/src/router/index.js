@@ -1,6 +1,6 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import Login from '../views/Login.vue'
-import App from '../App.vue'
+import HistoricalView from '../views/HistoricalView.vue'
 
 const routes = [
   {
@@ -9,7 +9,7 @@ const routes = [
   },
   {
     path: '/',
-    component: App,
+    component: HistoricalView,
     meta: { requiresAuth: true },
   },
 ]
