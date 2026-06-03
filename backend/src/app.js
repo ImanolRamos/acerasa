@@ -6,6 +6,7 @@ const infoRoutes = require("./routes/info.routes");
 const measurementsRoutes = require("./routes/measurements.routes");
 const eventsRoutes = require("./routes/events.routes");
 const metricsRoutes = require("./routes/metrics.routes");
+const loginRoutes = require("./routes/login.routes");
 
 const app = express();
 
@@ -21,5 +22,7 @@ app.use("/api/measurements", measurementsRoutes); // Datos
 app.use("/api/events", eventsRoutes); // Eventos del front
 
 app.use("/metrics", metricsRoutes); //Prometheus
+
+app.use("/api/login", loginRoutes); //Login
 
 module.exports = app;
