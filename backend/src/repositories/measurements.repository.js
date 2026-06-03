@@ -65,7 +65,7 @@ async function findMeasurementHistory({ variableId, variableName, from, to, limi
 
   return result.rows;
 }
-async function getAverageHistory({ variables, bucketMinutes }) {
+async function getAverageHistory({ variables, bucketMinutes, startDate, endDate }) {
   const result = await pool.query(
     `
     SELECT
@@ -78,10 +78,12 @@ async function getAverageHistory({ variables, bucketMinutes }) {
     JOIN measurement_variables mv ON mv.id = m.variable_id
     WHERE mv.active = TRUE
       AND mv.new_name = ANY($1::text[])
+      AND ($3::timestamptz IS NULL OR m.created_at >= $3::timestamptz)
+      AND ($4::timestamptz IS NULL OR m.created_at <= $4::timestamptz)
     GROUP BY time, mv.id, mv.new_name, mv.unit
     ORDER BY time ASC, mv.id ASC;
     `,
-    [variables, bucketMinutes]
+    [variables, bucketMinutes, startDate, endDate]
   );
 
   return result.rows;
