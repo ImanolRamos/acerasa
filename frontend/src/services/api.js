@@ -23,6 +23,8 @@ export function getAverageHistory({ variables, bucketMinutes }) {
       params: {
         variables: variables.join(','),
         bucket_minutes: bucketMinutes,
+        startDate,
+        endDate,
       },
     })
     .then((response) => response.data)

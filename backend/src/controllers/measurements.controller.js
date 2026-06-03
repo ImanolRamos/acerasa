@@ -78,7 +78,9 @@ async function getAverageHistory(req, res) {
       .map((v) => v.trim())
       .filter(Boolean);
 
-    const bucketMinutes = Number(req.query.bucket_minutes || 1);
+    const bucketMinutes = Number(req.query.bucket_minutes);
+    const startDate = req.query.startDate || null;
+    const endDate = req.query.endDate || null;
 
     if (variables.length === 0) {
       return res.status(400).json({
@@ -94,9 +96,25 @@ async function getAverageHistory(req, res) {
       });
     }
 
+    if (startDate && Number.isNaN(Date.parse(startDate))) {
+      return res.status(400).json({
+        ok: false,
+        error: "startDate no tiene un formato válido",
+      });
+    }
+
+    if (endDate && Number.isNaN(Date.parse(endDate))) {
+      return res.status(400).json({
+        ok: false,
+        error: "endDate no tiene un formato válido",
+      });
+    }
+
     const data = await measurementsRepository.getAverageHistory({
       variables,
       bucketMinutes,
+      startDate,
+      endDate,
     });
 
     res.json({

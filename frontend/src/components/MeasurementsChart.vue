@@ -34,6 +34,28 @@
             />
           </v-col>
 
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="startDate"
+              label="Fecha inicio"
+              type="datetime-local"
+              step="1"
+              density="comfortable"
+              variant="outlined"
+            />
+          </v-col>
+
+          <v-col cols="12" md="3">
+            <v-text-field
+              v-model="endDate"
+              label="Fecha fin"
+              type="datetime-local"
+              step="1"
+              density="comfortable"
+              variant="outlined"
+            />
+          </v-col>
+
           <v-col cols="12" md="2">
             <v-btn
               block
@@ -104,6 +126,8 @@ const bucketMinutes = ref(1)
 const historyData = ref([])
 const loading = ref(false)
 const error = ref('')
+const startDate = ref('')
+const endDate = ref('')
 const COLORS = [
   '#1976d2', // azul
   '#2e7d32', // verde
@@ -185,6 +209,8 @@ async function loadChart() {
     const response = await getAverageHistory({
       variables: selectedVariables.value,
       bucketMinutes: bucketMinutes.value,
+      startDate: startDate.value || null,
+      endDate: endDate.value || null,
     })
 
     historyData.value = response.data || []

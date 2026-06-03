@@ -31,7 +31,6 @@
         </div>
       </div>
 
-      <!-- Topics MQTT -->
       <section class="section">
         <MeasurementsChart />
       </section>
