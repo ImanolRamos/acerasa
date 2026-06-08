@@ -1,5 +1,4 @@
 <template>
-  <AppNavbar />
 
   <main class="page">
     <h1>Tiempo real</h1>

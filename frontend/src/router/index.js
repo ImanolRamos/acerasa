@@ -1,4 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AppLayout from '../layouts/AppLayout.vue'
 import Login from '../views/Login.vue'
 import HistoricalView from '../views/HistoricalView.vue'
 import RealtimeView from '../views/RealtimeView.vue'
@@ -11,22 +12,26 @@ const routes = [
   },
   {
     path: '/',
-    redirect: '/historic',
-  },
-  {
-    path: '/historic',
-    component: HistoricalView,
+    component: AppLayout,
     meta: { requiresAuth: true },
-  },
-  {
-    path: '/realtime',
-    component: RealtimeView,
-    meta: { requiresAuth: true },
-  },
-  {
-    path: '/info',
-    component: InfoView,
-    meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        redirect: '/historic'
+      },
+      {
+        path: '/historic',
+        component: HistoricalView,
+      },
+      {
+        path: '/realtime',
+        component: RealtimeView,
+      },
+      {
+        path: '/info',
+        component: InfoView,
+      },
+    ],
   },
 ]
 

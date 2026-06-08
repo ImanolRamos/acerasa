@@ -1,12 +1,5 @@
 <template>
   <main class="page">
-    
-    <AppNavbar
-      :client-name="clientName"
-      :mqtt-connected="Boolean(info.mqtt_connected)"
-      :api-online="Boolean(health.ok)"
-      @refresh="refresh"
-    />
     <div class="content">
 
       <!-- Stats -->

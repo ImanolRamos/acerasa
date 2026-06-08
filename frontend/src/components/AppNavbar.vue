@@ -1,43 +1,24 @@
 <template>
   <header class="topbar">
     <div class="topbar-left">
-      <div class="logo">K</div>
-      <div>
-        <div class="client-name">{{ clientName }}</div>
-        <div class="subtitle">Koiote Cloud — Panel industrial</div>
+      <div class="brand">
+        <div class="logo">K</div>
+        <div>
+          <div class="client-name">Koiote Cloud</div>
+          <div class="subtitle">Panel industrial</div>
+        </div>
       </div>
+
+      <nav class="nav-links">
+        <RouterLink to="/historic" class="nav-link">Histórico</RouterLink>
+        <RouterLink to="/realtime" class="nav-link">Tiempo real</RouterLink>
+        <RouterLink to="/info" class="nav-link">Info</RouterLink>
+      </nav>
     </div>
 
-    <div class="topbar-right">
-
-      <RouterLink class="nav-link" to="/historic">
-        Histórico
-      </RouterLink>
-
-      <RouterLink class="nav-link" to="/realtime">
-        Tiempo real
-      </RouterLink>
-
-      <RouterLink class="nav-link" to="/info">
-        Info
-      </RouterLink>
-
-      <span class="badge" :class="mqttConnected ? 'badge-ok' : 'badge-error'">
-        MQTT {{ mqttConnected ? 'Online' : 'Offline' }}
-      </span>
-
-      <span class="badge" :class="apiOnline ? 'badge-ok' : 'badge-error'">
-        API {{ apiOnline ? 'Online' : 'Offline' }}
-      </span>
-
-      <button class="btn-refresh" @click="$emit('refresh')">
-        ↺ Actualizar
-      </button>
-
-      <v-btn size="small" variant="outlined" @click="logout">
-        Salir
-      </v-btn>
-    </div>
+    <button class="btn-logout" @click="logout">
+      Salir
+    </button>
   </header>
 </template>
 
@@ -69,3 +50,70 @@ function logout() {
   router.push('/login')
 }
 </script>
+<style scoped>
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #1b3a5c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 24px;
+  gap: 16px;
+}
+
+.topbar-left {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+}
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.nav-link {
+  color: #93c5fd;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.nav-link:hover {
+  background: #1e40af;
+  color: white;
+}
+
+.nav-link.router-link-active {
+  background: #2563eb;
+  color: white;
+}
+
+.btn-logout {
+  padding: 6px 12px;
+  border-radius: 8px;
+  border: 1px solid #93c5fd;
+  background: transparent;
+  color: white;
+  cursor: pointer;
+  font-size: 13px;
+}
+
+.btn-logout:hover {
+  background: #dc2626;
+  border-color: #dc2626;
+  color: white;
+}
+</style>
