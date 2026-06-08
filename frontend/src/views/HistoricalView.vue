@@ -167,4 +167,22 @@ body { margin: 0; font-family: Arial, sans-serif; background: #f0f4f8; color: #1
   height: 420px;
   margin-top: 16px;
 }
+.nav-link {
+  color: #93c5fd;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  padding: 6px 10px;
+  border-radius: 8px;
+}
+
+.nav-link:hover {
+  background: #1e40af;
+  color: white;
+}
+
+.nav-link.router-link-active {
+  background: #2563eb;
+  color: white;
+}
 </style>

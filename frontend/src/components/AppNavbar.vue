@@ -9,6 +9,19 @@
     </div>
 
     <div class="topbar-right">
+
+      <RouterLink class="nav-link" to="/historic">
+        Histórico
+      </RouterLink>
+
+      <RouterLink class="nav-link" to="/realtime">
+        Tiempo real
+      </RouterLink>
+
+      <RouterLink class="nav-link" to="/info">
+        Info
+      </RouterLink>
+
       <span class="badge" :class="mqttConnected ? 'badge-ok' : 'badge-error'">
         MQTT {{ mqttConnected ? 'Online' : 'Offline' }}
       </span>
