@@ -30,14 +30,6 @@ defineProps({
     type: String,
     required: true,
   },
-  mqttConnected: {
-    type: Boolean,
-    default: false,
-  },
-  apiOnline: {
-    type: Boolean,
-    default: false,
-  },
 })
 
 defineEmits(['refresh'])

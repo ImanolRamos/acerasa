@@ -14,7 +14,7 @@ export function getInfo() {
 }
 
 export function getMeasurementCount() {
-  return api.get('/measurements/count').then((response) => response.data.count)
+  return api.get('/measurements/count').then((response) => response.data.data)
 }
 
 export function getMeasurementVariables() {

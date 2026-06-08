@@ -16,7 +16,7 @@
         <div class="stat-card">
           <div class="stat-label">Datos guardados</div>
           <div class="stat-value">
-            {{ measurement_count || 0 }}
+            {{ measurementCount || 0 }}
           </div>
         </div>
 
@@ -45,7 +45,7 @@ let timer = null
 
 async function refresh() {
   try {
-    const [healthData, infoData, measurementCount] = await Promise.all([
+    const [healthData, infoData, count] = await Promise.all([
       getHealth(),
       getInfo(),
       getMeasurementCount(),
@@ -53,7 +53,7 @@ async function refresh() {
 
     health.value = healthData
     info.value = infoData
-    measurementCount.value = measurementCount
+    measurementCount.value = count
     lastCheck.value = new Date().toLocaleString('es')
   } catch (error) {
     console.error(error)
