@@ -13,6 +13,10 @@ export function getInfo() {
   return api.get('/info').then((response) => response.data)
 }
 
+export function getMeasurementCount() {
+  return api.get('/measurements/count').then((response) => response.data.count)
+}
+
 export function getMeasurementVariables() {
   return api.get('/measurements/variables').then((response) => response.data)
 }

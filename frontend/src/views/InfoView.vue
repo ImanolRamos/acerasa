@@ -14,9 +14,9 @@
         </div>
 
         <div class="stat-card">
-          <div class="stat-label">Mensajes recibidos</div>
+          <div class="stat-label">Datos guardados</div>
           <div class="stat-value">
-            {{ info.mqtt_messages_total || 0 }}
+            {{ measurement_count || 0 }}
           </div>
         </div>
 
@@ -34,23 +34,26 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
-import { getHealth, getInfo } from '../services/api.js'
+import { getHealth, getInfo, getMeasurementCount } from '../services/api.js'
 
 const health = ref({})
 const info = ref({})
+const measurementCount = ref(0)
 const lastCheck = ref('—')
 
 let timer = null
 
 async function refresh() {
   try {
-    const [healthData, infoData] = await Promise.all([
+    const [healthData, infoData, measurementCount] = await Promise.all([
       getHealth(),
       getInfo(),
+      getMeasurementCount(),
     ])
 
     health.value = healthData
     info.value = infoData
+    measurementCount.value = measurementCount
     lastCheck.value = new Date().toLocaleString('es')
   } catch (error) {
     console.error(error)

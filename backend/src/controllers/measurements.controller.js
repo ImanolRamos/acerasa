@@ -129,11 +129,11 @@ async function getAverageHistory(req, res) {
 
 async function getMeasurementCount(req, res) {
   try {
-    const count = await measurementsRepository.getMeasurementCount();
+    const data = await measurementsRepository.getMeasurementCount();
 
     res.json({
       ok: true,
-      data: { count },
+      data,
     });
   } catch (error) {
     res.status(500).json({
