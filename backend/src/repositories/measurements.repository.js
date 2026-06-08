@@ -89,9 +89,19 @@ async function getAverageHistory({ variables, bucketMinutes, startDate, endDate 
   return result.rows;
 }
 
+async function getMeasurementCount() {
+  const result = await pool.query(`
+    SELECT COUNT(*)::int AS count
+    FROM measurements;
+  `);
+
+  return result.rows[0].count;
+}
+
 module.exports = {
   findVariables,
   findLatestMeasurements,
   findMeasurementHistory,
   getAverageHistory,
+  getMeasurementCount,
 };
