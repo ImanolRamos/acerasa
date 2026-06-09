@@ -78,6 +78,7 @@ services:
       MQTT_USER: "${MQTT_BACK_USER}"
       MQTT_PASSWORD: "${MQTT_BACK_PASSWORD}"
       NODE_ENV: "production"
+      JWT_SECRET: "${JWT_SECRET}"
     expose:
       - "3000"
     depends_on:
