@@ -23,7 +23,6 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { trackEvent, registerScreenTimeTracking } from '../lib/analytics.js'
 import { getHealth, getInfo } from '../services/api.js'
 
-import AppNavbar from '../components/AppNavbar.vue'
 import MeasurementsChart from '../components/MeasurementsChart.vue'
 
 const clientName = import.meta.env.VITE_CLIENT_NAME || 'Koiote'
@@ -98,7 +97,65 @@ body { margin: 0; font-family: Arial, sans-serif; background: #f0f4f8; color: #1
 .btn-refresh { padding: 6px 14px; border-radius: 8px; border: 1px solid #93c5fd; background: transparent; color: #93c5fd; cursor: pointer; font-size: 13px; }
 .btn-refresh:hover { background: #1e40af; }
 
-.content { max-width: 1200px; margin: 0 auto; padding: 24px; }
+.content {
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.section {
+  width: 100%;
+  margin-bottom: 28px;
+}
+
+.chart-card {
+  width: 100%;
+  max-width: 100%;
+  background: white;
+  border: 1px solid #e2e8f0;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 420px;
+  margin-top: 16px;
+}
+
+@media (max-width: 768px) {
+  .content {
+    padding: 16px;
+  }
+
+  .topbar {
+    padding: 10px 12px;
+    align-items: flex-start;
+    overflow-x: auto;
+  }
+
+  .topbar-left {
+    min-width: 150px;
+  }
+
+  .topbar-right {
+    gap: 6px;
+    flex-wrap: nowrap;
+  }
+
+  .nav-link {
+    font-size: 12px;
+    padding: 6px 8px;
+    white-space: nowrap;
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+
+  .links {
+    flex-wrap: wrap;
+  }
+}
 
 .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
 .stat-card { background: white; border-radius: 14px; padding: 20px; border: 1px solid #e2e8f0; }
