@@ -6,69 +6,63 @@
       </v-card-title>
 
       <v-card-text>
-        <v-row dense>
-          <v-col cols="12" md="8">
-            <v-autocomplete
-              v-model="selectedVariables"
-              :items="variables"
-              item-title="new_name"
-              item-value="new_name"
-              label="Variables"
-              multiple
-              chips
-              closable-chips
-              density="comfortable"
-              variant="outlined"
-            />
-          </v-col>
+        <div class="filters-grid">
+          <v-autocomplete
+            v-model="selectedVariables"
+            :items="variables"
+            item-title="new_name"
+            item-value="new_name"
+            label="Variables"
+            multiple
+            chips
+            closable-chips
+            density="comfortable"
+            variant="outlined"
+            class="filter-field variables-field"
+          />
 
-          <v-col cols="12" md="2">
-            <v-text-field
-              v-model.number="bucketMinutes"
-              label="Media cada"
-              type="number"
-              min="1"
-              suffix="min"
-              density="comfortable"
-              variant="outlined"
-            />
-          </v-col>
+          <v-text-field
+            v-model.number="bucketMinutes"
+            label="Media cada"
+            type="number"
+            min="1"
+            suffix="min"
+            density="comfortable"
+            variant="outlined"
+            class="filter-field"
+          />
 
-          <v-col cols="12" md="3">
-            <v-text-field
-              v-model="startDate"
-              label="Fecha inicio"
-              type="datetime-local"
-              step="1"
-              density="comfortable"
-              variant="outlined"
-            />
-          </v-col>
+          <v-text-field
+            v-model="startDate"
+            label="Fecha inicio"
+            type="datetime-local"
+            step="1"
+            density="comfortable"
+            variant="outlined"
+            class="filter-field"
+          />
 
-          <v-col cols="12" md="3">
-            <v-text-field
-              v-model="endDate"
-              label="Fecha fin"
-              type="datetime-local"
-              step="1"
-              density="comfortable"
-              variant="outlined"
-            />
-          </v-col>
+          <v-text-field
+            v-model="endDate"
+            label="Fecha fin"
+            type="datetime-local"
+            step="1"
+            density="comfortable"
+            variant="outlined"
+            class="filter-field"
+          />
 
-          <v-col cols="12" md="2">
-            <v-btn
-              block
-              height="48"
-              color="primary"
-              :loading="loading"
-              :disabled="selectedVariables.length === 0"
-              @click="loadChart"
-            >
-              Ver gráfica
-            </v-btn>
-          </v-col>
-        </v-row>
+          <v-btn
+            height="48"
+            color="primary"
+            :loading="loading"
+            :disabled="selectedVariables.length === 0"
+            @click="loadChart"
+            class="chart-button"
+          >
+            Ver gráfica
+          </v-btn>
+        </div>
 
         <v-alert
           v-if="error"
@@ -232,3 +226,44 @@ function formatLabel(date) {
 
 onMounted(loadVariables)
 </script>
+<style scoped>
+.filters-grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr auto;
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 16px;
+}
+
+.filter-field {
+  min-width: 0;
+}
+
+.chart-button {
+  min-width: 140px;
+}
+
+.chart-card {
+  width: 100%;
+}
+
+.chart-wrapper {
+  width: 100%;
+  height: 420px;
+  margin-top: 16px;
+}
+
+@media (max-width: 900px) {
+  .filters-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .chart-button {
+    width: 100%;
+  }
+
+  .chart-wrapper {
+    height: 300px;
+  }
+}
+</style>
