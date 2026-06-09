@@ -118,7 +118,16 @@ const chartOptions = {
 }
 
 function formatLabel(date) {
-  return new Date(date).toLocaleTimeString('es', {
+  if (!date) return ''
+
+  const normalizedDate = date.replace(/([+-]\d{2})$/, '$1:00')
+  const parsedDate = new Date(normalizedDate)
+
+  if (Number.isNaN(parsedDate.getTime())) {
+    return ''
+  }
+
+  return parsedDate.toLocaleTimeString('es', {
     hour: '2-digit',
     minute: '2-digit',
     second: '2-digit',
