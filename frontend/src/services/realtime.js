@@ -7,10 +7,18 @@ export function createRealtimeStream({ onOpen, onMessage, onError }) {
     onOpen?.()
   }
 
-  eventSource.onmessage = (event) => {
+  eventSource.addEventListener('measurement', (event) => {
     const data = JSON.parse(event.data)
     onMessage?.(data)
-  }
+  })
+
+  eventSource.addEventListener('connected', () => {
+    console.log('SSE backend conectado')
+  })
+
+  eventSource.addEventListener('error', (event) => {
+    onError?.(event)
+  })
 
   eventSource.onerror = (error) => {
     onError?.(error)

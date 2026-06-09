@@ -19,30 +19,20 @@
       </v-alert>
     </v-card>
 
-    <v-card class="pa-4">
-      <h2>Último mensaje recibido</h2>
+    <RealtimeTopicChart
+      v-for="[topic, messages] in topicEntries"
+      :key="topic"
+      :topic="topic"
+      :messages="messages"
+    />
 
-      <pre v-if="lastMessage">{{ formattedLastMessage }}</pre>
-      <p v-else>Todavía no se han recibido datos.</p>
-    </v-card>
-
-    <v-card class="pa-4 mt-4">
-      <h2>Topics recibidos</h2>
-
-      <div v-if="topicEntries.length">
-        <p v-for="[topic, messages] in topicEntries" :key="topic">
-          <strong>{{ topic }}</strong>: {{ messages.length }} mensajes
-        </p>
-      </div>
-
-      <p v-else>Todavía no se ha recibido ningún topic.</p>
-    </v-card>
   </main>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, ref } from 'vue'
 import { createRealtimeStream } from '../services/realtime'
+import RealtimeTopicChart from '../components/RealtimeTopicChart.vue'
 
 const MAX_POINTS = 30
 
