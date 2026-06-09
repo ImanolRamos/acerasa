@@ -2,27 +2,6 @@
   <main class="page">
     <div class="content">
 
-      <!-- Stats -->
-      <div class="stats-grid">
-        <div class="stat-card">
-          <div class="stat-label">Topics activos</div>
-          <div class="stat-value">{{ mqttData.length }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Mensajes recibidos</div>
-          <div class="stat-value">{{ info.mqtt_messages_total || 0 }}</div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Base de datos</div>
-          <div class="stat-value" :class="health.db === 'ok' ? 'text-ok' : 'text-error'">
-            {{ health.db || '...' }}
-          </div>
-        </div>
-        <div class="stat-card">
-          <div class="stat-label">Última actualización</div>
-          <div class="stat-value small">{{ lastCheck }}</div>
-        </div>
-      </div>
 
       <section class="section">
         <MeasurementsChart />

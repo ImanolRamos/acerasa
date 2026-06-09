@@ -52,3 +52,9 @@ api.interceptors.request.use((config) => {
 
   return config
 })
+
+export function getLatestMeasurements() {
+  return api
+    .get('/measurements/latest')
+    .then((response) => response.data)
+}
