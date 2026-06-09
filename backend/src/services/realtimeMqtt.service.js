@@ -2,17 +2,15 @@ const mqtt = require('mqtt')
 
 let client = null
 
-function getTopicFromOriginalName(originalName) {
-  if (originalName.startsWith('V_LN/')) return 'acerasa/pac3220/voltage/ln'
-  if (originalName.startsWith('V_LL/')) return 'acerasa/pac3220/voltage/ll'
-  if (originalName.startsWith('I/')) return 'acerasa/pac3220/current'
-  if (originalName.startsWith('Power/W/')) return 'acerasa/pac3220/power/active'
-  if (originalName.startsWith('Power/var/')) return 'acerasa/pac3220/power/reactive'
-  if (originalName.startsWith('Power/VA/')) return 'acerasa/pac3220/power/apparent'
-  if (originalName.startsWith('Power/Factor/')) return 'acerasa/pac3220/power/factor'
-
-  return null
-}
+const REALTIME_TOPICS = [
+  'acerasa/pac3220/voltage/ln',
+  'acerasa/pac3220/voltage/ll',
+  'acerasa/pac3220/current',
+  'acerasa/pac3220/power/active',
+  'acerasa/pac3220/power/reactive',
+  'acerasa/pac3220/power/apparent',
+  'acerasa/pac3220/power/factor',
+]
 
 function getMqttClient() {
   if (client) return client
@@ -47,47 +45,39 @@ function getMqttClient() {
   return client
 }
 
-function extractMeasurementsFromPayload(topic, payload, variables) {
+function extractTopicMeasurements(topic, payload) {
   let parsed
 
   try {
     parsed = JSON.parse(payload.toString())
   } catch (error) {
     console.error('[Realtime MQTT] Payload JSON inválido:', error.message)
-    return []
+    return null
   }
 
-  const measurements = []
+  const groupKey = Object.keys(parsed).find((key) => key !== 'Timestamp')
 
-  for (const variable of variables) {
-    const expectedTopic = getTopicFromOriginalName(variable.original_name)
-
-    if (!expectedTopic || topic !== expectedTopic) continue
-
-    for (const value of Object.values(parsed)) {
-      if (
-        value &&
-        typeof value === 'object' &&
-        value[variable.original_name]
-      ) {
-        const rawValue = value[variable.original_name]
-
-        measurements.push({
-          time: parsed.Timestamp,
-          variable: variable.new_name,
-          original_name: variable.original_name,
-          value: Number(rawValue.Value),
-          unit: rawValue.Unit || variable.unit || '',
-        })
-      }
-    }
+  if (!groupKey || !parsed[groupKey]) {
+    return null
   }
 
-  return measurements
+  const measurements = Object.entries(parsed[groupKey]).map(
+    ([originalName, data]) => ({
+      original_name: originalName,
+      value: Number(data.Value),
+      unit: data.Unit || '',
+    }),
+  )
+
+  return {
+    topic,
+    time: parsed.Timestamp,
+    group: groupKey,
+    measurements,
+  }
 }
 
 module.exports = {
   getMqttClient,
-  getTopicFromOriginalName,
-  extractMeasurementsFromPayload,
+  extractTopicMeasurements,
 }
