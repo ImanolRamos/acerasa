@@ -16,51 +16,42 @@ async function streamRealTimeMeasurements(req, res) {
     res.setHeader('Connection', 'keep-alive')
     res.flushHeaders?.()
 
-    sendSse(res, 'connected', {
-      ok: true,
+    sendSse(res, 'connected', { ok: true })
+
+    const mqttClient = getMqttClient()
+
+    mqttClient.subscribe(REALTIME_TOPICS, { qos: 1 }, (error) => {
+      if (error) {
+        console.error('[Realtime MQTT] Error suscribiendo:', error.message)
+        sendSse(res, 'error', {
+          ok: false,
+          error: error.message,
+        })
+        return
+      }
+
+      console.log('[Realtime MQTT] Suscrito a topics realtime')
     })
 
-    const mqttClient = realtimeMqttService.getMqttClient()
-
-    mqttClient.subscribe(
-        realtimeMqttService.REALTIME_TOPICS,
-        { qos: 1 },
-        (error) => {
-            if (error) {
-            console.error('[Realtime MQTT] Error suscribiendo:', error.message)
-            } else {
-            console.log('[Realtime MQTT] Suscrito a topics realtime')
-            }
-        },
-    )
-
     const onMessage = (topic, payload) => {
-      const measurement =
-        realtimeMqttService.extractTopicMeasurements(
-          topic,
-          payload,
-        )
+      if (!REALTIME_TOPICS.includes(topic)) {
+        return
+      }
+
+      const measurement = extractTopicMeasurements(topic, payload)
 
       if (!measurement) {
         return
       }
 
-      sendSse(
-        res,
-        'measurement',
-        measurement,
-      )
+      sendSse(res, 'measurement', measurement)
     }
 
     mqttClient.on('message', onMessage)
 
     req.on('close', () => {
       mqttClient.off('message', onMessage)
-
-      mqttClient.unsubscribe(
-        realtimeMqttService.REALTIME_TOPICS,
-      )
-
+      mqttClient.unsubscribe(REALTIME_TOPICS)
       res.end()
     })
   } catch (error) {
