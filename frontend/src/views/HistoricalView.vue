@@ -74,28 +74,11 @@ onMounted(() => {
 onUnmounted(() => clearInterval(timer))
 </script>
 
-<style>
-*, *::before, *::after { box-sizing: border-box; }
-body { margin: 0; font-family: Arial, sans-serif; background: #f0f4f8; color: #1a202c; }
-
-.topbar {
-  position: sticky; top: 0; z-index: 10;
-  background: #1b3a5c; color: white;
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 12px 24px; gap: 16px;
+<style scoped>
+.page {
+  min-height: 100vh;
+  background: #f0f4f8;
 }
-.topbar-left { display: flex; align-items: center; gap: 14px; }
-.topbar-right { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-.logo { width: 40px; height: 40px; border-radius: 10px; background: #2563eb; color: white; font-size: 20px; font-weight: 700; display: grid; place-items: center; flex-shrink: 0; }
-.client-name { font-size: 16px; font-weight: 700; }
-.subtitle { font-size: 12px; color: #93c5fd; }
-
-.badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
-.badge-ok { background: #065f46; color: #6ee7b7; }
-.badge-error { background: #7f1d1d; color: #fca5a5; }
-
-.btn-refresh { padding: 6px 14px; border-radius: 8px; border: 1px solid #93c5fd; background: transparent; color: #93c5fd; cursor: pointer; font-size: 13px; }
-.btn-refresh:hover { background: #1e40af; }
 
 .content {
   width: 100%;
@@ -109,17 +92,24 @@ body { margin: 0; font-family: Arial, sans-serif; background: #f0f4f8; color: #1
   margin-bottom: 28px;
 }
 
-.chart-card {
-  width: 100%;
-  max-width: 100%;
-  background: white;
-  border: 1px solid #e2e8f0;
+.links {
+  display: flex;
+  gap: 12px;
 }
 
-.chart-wrapper {
-  width: 100%;
-  height: 420px;
-  margin-top: 16px;
+.btn-link {
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+  border: none;
+  cursor: pointer;
+}
+
+.grafana {
+  background: #f97316;
+  color: white;
 }
 
 @media (max-width: 768px) {
@@ -127,91 +117,8 @@ body { margin: 0; font-family: Arial, sans-serif; background: #f0f4f8; color: #1
     padding: 16px;
   }
 
-  .topbar {
-    padding: 10px 12px;
-    align-items: flex-start;
-    overflow-x: auto;
-  }
-
-  .topbar-left {
-    min-width: 150px;
-  }
-
-  .topbar-right {
-    gap: 6px;
-    flex-wrap: nowrap;
-  }
-
-  .nav-link {
-    font-size: 12px;
-    padding: 6px 8px;
-    white-space: nowrap;
-  }
-
-  .chart-wrapper {
-    height: 300px;
-  }
-
   .links {
     flex-wrap: wrap;
   }
-}
-
-.stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
-.stat-card { background: white; border-radius: 14px; padding: 20px; border: 1px solid #e2e8f0; }
-.stat-label { font-size: 12px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-.stat-value { font-size: 24px; font-weight: 700; color: #1b3a5c; }
-.stat-value.small { font-size: 14px; font-weight: 400; color: #64748b; }
-.text-ok { color: #059669; }
-.text-error { color: #dc2626; }
-
-.section { margin-bottom: 28px; }
-.section h2 { font-size: 16px; font-weight: 700; color: #1b3a5c; margin: 0 0 14px; }
-
-.empty { background: white; border-radius: 14px; padding: 32px; text-align: center; color: #94a3b8; border: 2px dashed #e2e8f0; line-height: 1.8; }
-.empty code { background: #f1f5f9; padding: 2px 8px; border-radius: 6px; font-size: 14px; color: #1b3a5c; }
-
-.topics-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px; }
-.topic-card { background: white; border-radius: 14px; padding: 18px; border: 1px solid #e2e8f0; }
-.topic-name { font-size: 11px; color: #94a3b8; font-family: monospace; margin-bottom: 8px; word-break: break-all; }
-.topic-value { font-size: 22px; font-weight: 700; color: #1b3a5c; margin-bottom: 6px; word-break: break-all; }
-.topic-time { font-size: 11px; color: #cbd5e1; }
-
-.links { display: flex; gap: 12px; }
-.btn-link { padding: 10px 20px; border-radius: 10px; font-size: 14px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; }
-.grafana { background: #f97316; color: white; }
-
-.chart-card {
-  background: white;
-  border: 1px solid #e2e8f0;
-}
-
-.chart-title {
-  color: #1b3a5c;
-  font-size: 16px;
-  font-weight: 700;
-}
-
-.chart-wrapper {
-  height: 420px;
-  margin-top: 16px;
-}
-.nav-link {
-  color: #93c5fd;
-  text-decoration: none;
-  font-size: 13px;
-  font-weight: 600;
-  padding: 6px 10px;
-  border-radius: 8px;
-}
-
-.nav-link:hover {
-  background: #1e40af;
-  color: white;
-}
-
-.nav-link.router-link-active {
-  background: #2563eb;
-  color: white;
 }
 </style>
