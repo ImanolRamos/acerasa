@@ -78,6 +78,7 @@ function extractTopicMeasurements(topic, payload) {
 }
 
 module.exports = {
+  REALTIME_TOPICS,
   getMqttClient,
   extractTopicMeasurements,
 }

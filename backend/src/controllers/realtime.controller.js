@@ -1,4 +1,8 @@
-const realtimeMqttService = require('../services/realtimeMqtt.service')
+const {
+  REALTIME_TOPICS,
+  getMqttClient,
+  extractTopicMeasurements,
+} = require('../services/realtimeMqtt.service')
 
 function sendSse(res, event, data) {
   res.write(`event: ${event}\n`)
