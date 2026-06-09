@@ -69,8 +69,6 @@ async function getMeasurementHistory(req, res) {
   }
 }
 
-
-
 async function getAverageHistory(req, res) {
   try {
     const variables = String(req.query.variables || "")
@@ -129,9 +127,25 @@ async function getAverageHistory(req, res) {
   }
 }
 
+async function getMeasurementCount(req, res) {
+  try {
+    const data = await measurementsRepository.getMeasurementCount();
+
+    res.json({
+      ok: true,
+      data,
+    });
+  } catch (error) {
+    res.status(500).json({
+      ok: false,
+      error: error.message,
+    });
+  }
+}
 module.exports = {
   getVariables,
   getLatestMeasurements,
   getMeasurementHistory,
   getAverageHistory,
+  getMeasurementCount,
 };

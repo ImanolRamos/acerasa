@@ -75,9 +75,10 @@ services:
       PORT: "3000"
       DATABASE_URL: "postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@timescaledb:5432/${POSTGRES_DB}"
       MQTT_URL: "mqtt://mosquitto:1883"
-      MQTT_USER: "${MQTT_USER}"
-      MQTT_PASSWORD: "${MQTT_PASSWORD}"
+      MQTT_USER: "${MQTT_BACK_USER}"
+      MQTT_PASSWORD: "${MQTT_BACK_PASSWORD}"
       NODE_ENV: "production"
+      JWT_SECRET: "${JWT_SECRET}"
     expose:
       - "3000"
     depends_on:

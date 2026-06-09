@@ -1,7 +1,8 @@
 import axios from 'axios'
 
+export const API_BASE_URL = 'https://acerasa.koiote.es/api'
 const api = axios.create({
-  baseURL: '/api',
+  baseURL: API_BASE_URL,
   timeout: 5000,
 })
 
@@ -11,6 +12,10 @@ export function getHealth() {
 
 export function getInfo() {
   return api.get('/info').then((response) => response.data)
+}
+
+export function getMeasurementCount() {
+  return api.get('/measurements/count').then((response) => response.data.data)
 }
 
 export function getMeasurementVariables() {
@@ -48,3 +53,9 @@ api.interceptors.request.use((config) => {
 
   return config
 })
+
+export function getLatestMeasurements() {
+  return api
+    .get('/measurements/latest')
+    .then((response) => response.data)
+}

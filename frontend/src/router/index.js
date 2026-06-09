@@ -1,6 +1,9 @@
 import { createRouter, createWebHistory } from 'vue-router'
+import AppLayout from '../layouts/AppLayout.vue'
 import Login from '../views/Login.vue'
 import HistoricalView from '../views/HistoricalView.vue'
+import RealtimeView from '../views/RealtimeView.vue'
+import InfoView from '../views/InfoView.vue'
 
 const routes = [
   {
@@ -9,8 +12,26 @@ const routes = [
   },
   {
     path: '/',
-    component: HistoricalView,
+    component: AppLayout,
     meta: { requiresAuth: true },
+    children: [
+      {
+        path: '',
+        redirect: '/historic'
+      },
+      {
+        path: '/historic',
+        component: HistoricalView,
+      },
+      {
+        path: '/realtime',
+        component: RealtimeView,
+      },
+      {
+        path: '/info',
+        component: InfoView,
+      },
+    ],
   },
 ]
 
@@ -27,7 +48,7 @@ router.beforeEach((to) => {
   }
 
   if (to.path === '/login' && token) {
-    return '/'
+    return '/historic'
   }
 })
 
