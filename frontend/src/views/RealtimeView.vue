@@ -36,6 +36,16 @@ import RealtimeTopicChart from '../components/RealtimeTopicChart.vue'
 
 const MAX_POINTS = 30
 
+const TOPIC_ORDER = [
+  'acerasa/pac3220/voltage/ln',
+  'acerasa/pac3220/voltage/ll',
+  'acerasa/pac3220/current',
+  'acerasa/pac3220/power/active',
+  'acerasa/pac3220/power/reactive',
+  'acerasa/pac3220/power/apparent',
+  'acerasa/pac3220/power/factor',
+]
+
 const isMonitoring = ref(false)
 const lastMessage = ref(null)
 const messagesByTopic = ref({})
@@ -56,7 +66,12 @@ const formattedLastMessage = computed(() => {
 })
 
 const topicEntries = computed(() => {
-  return Object.entries(messagesByTopic.value)
+  return TOPIC_ORDER
+    .filter((topic) => messagesByTopic.value[topic])
+    .map((topic) => [
+      topic,
+      messagesByTopic.value[topic],
+    ])
 })
 
 function startMonitoring() {

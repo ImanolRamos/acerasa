@@ -59,9 +59,18 @@ const COLORS = [
   '#fbc02d',
   '#5d4037',
 ]
+const TOPIC_TITLES = {
+  'acerasa/pac3220/voltage/ln': 'Tensión fase-neutro (V)',
+  'acerasa/pac3220/voltage/ll': 'Tensión entre fases (V)',
+  'acerasa/pac3220/current': 'Corriente (A)',
+  'acerasa/pac3220/power/active': 'Potencia activa (W)',
+  'acerasa/pac3220/power/reactive': 'Potencia reactiva (var)',
+  'acerasa/pac3220/power/apparent': 'Potencia aparente (VA)',
+  'acerasa/pac3220/power/factor': 'Factor de potencia cos(φ)',
+}
 
 const title = computed(() => {
-  return props.topic.replace('acerasa/pac3220/', '')
+  return TOPIC_TITLES[props.topic] || props.topic
 })
 
 const chartData = computed(() => {
