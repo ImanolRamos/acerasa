@@ -15,16 +15,31 @@
       <button class="btn-logout" @click="logout">Salir</button>
     </nav>
 
-    <button class="menu-button" @click="menuOpen = !menuOpen">
-      ☰
-    </button>
+    <v-menu v-model="menuOpen" location="bottom end">
+      <template #activator="{ props }">
+        <button class="menu-button" v-bind="props">
+          ☰
+        </button>
+      </template>
 
-    <div v-if="menuOpen" class="mobile-menu">
-      <RouterLink to="/historic" class="mobile-link" @click="closeMenu">Histórico</RouterLink>
-      <RouterLink to="/realtime" class="mobile-link" @click="closeMenu">Tiempo real</RouterLink>
-      <RouterLink to="/info" class="mobile-link" @click="closeMenu">Info</RouterLink>
-      <button class="mobile-link logout" @click="logout">Salir</button>
-    </div>
+      <v-list class="mobile-menu-list">
+        <v-list-item to="/historic" @click="closeMenu">
+          Histórico
+        </v-list-item>
+
+        <v-list-item to="/realtime" @click="closeMenu">
+          Tiempo real
+        </v-list-item>
+
+        <v-list-item to="/info" @click="closeMenu">
+          Info
+        </v-list-item>
+
+        <v-list-item @click="logout">
+          Salir
+        </v-list-item>
+      </v-list>
+    </v-menu>
   </header>
 </template>
 
@@ -40,6 +55,7 @@ function closeMenu() {
 }
 
 function logout() {
+  closeMenu()
   localStorage.removeItem('token')
   localStorage.removeItem('user')
   router.push('/login')
@@ -126,16 +142,10 @@ function logout() {
 
 .menu-button {
   display: none;
-  border: 1px solid #93c5fd;
-  background: transparent;
-  color: white;
-  border-radius: 8px;
-  font-size: 22px;
-  padding: 4px 10px;
 }
 
-.mobile-menu {
-  display: none;
+.mobile-menu-list {
+  min-width: 180px;
 }
 
 @media (max-width: 768px) {
@@ -149,39 +159,13 @@ function logout() {
 
   .menu-button {
     display: block;
-  }
-
-  .mobile-menu {
-    position: absolute;
-    top: 72px;
-    left: 16px;
-    right: 16px;
-    display: flex;
-    flex-direction: column;
-    background: #1b3a5c;
-    border: 1px solid #34577a;
-    border-radius: 12px;
-    padding: 8px;
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.2);
-  }
-
-  .mobile-link {
-    color: white;
-    text-decoration: none;
-    padding: 12px;
-    border-radius: 8px;
+    border: 1px solid #93c5fd;
     background: transparent;
-    border: none;
-    text-align: left;
-    font-size: 15px;
-  }
-
-  .mobile-link.router-link-active {
-    background: #2563eb;
-  }
-
-  .mobile-link.logout {
-    color: #fecaca;
+    color: white;
+    border-radius: 8px;
+    font-size: 22px;
+    padding: 4px 10px;
+    cursor: pointer;
   }
 }
 </style>
