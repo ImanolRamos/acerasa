@@ -1,7 +1,8 @@
 import axios from 'axios'
 
+export const API_BASE_URL = 'https://acerasa.koiote.es/api'
 const api = axios.create({
-  baseURL: 'https://acerasa.koiote.es/api',
+  baseURL: API_BASE_URL,
   timeout: 5000,
 })
 

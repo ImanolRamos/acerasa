@@ -1,17 +1,140 @@
 <template>
+  <main class="realtime-view">
+    <h1>Monitorización en tiempo real</h1>
 
-  <main class="page">
-    <h1>Tiempo real</h1>
-    <p>Vista preparada para mostrar mediciones en tiempo real.</p>
+    <v-card class="pa-4 mb-4">
+      <div class="d-flex align-center justify-space-between">
+        <div>
+          <h2>Estado SSE</h2>
+          <p>{{ statusText }}</p>
+        </div>
+
+        <v-btn :color="isMonitoring ? 'error' : 'primary'" @click="toggleMonitoring">
+          {{ isMonitoring ? 'Detener monitorización' : 'Iniciar monitorización' }}
+        </v-btn>
+      </div>
+
+      <v-alert v-if="errorMessage" type="error" variant="tonal" class="mt-4">
+        {{ errorMessage }}
+      </v-alert>
+    </v-card>
+
+    <v-card class="pa-4">
+      <h2>Último mensaje recibido</h2>
+
+      <pre v-if="lastMessage">{{ formattedLastMessage }}</pre>
+      <p v-else>Todavía no se han recibido datos.</p>
+    </v-card>
+
+    <v-card class="pa-4 mt-4">
+      <h2>Topics recibidos</h2>
+
+      <div v-if="topicEntries.length">
+        <p v-for="[topic, messages] in topicEntries" :key="topic">
+          <strong>{{ topic }}</strong>: {{ messages.length }} mensajes
+        </p>
+      </div>
+
+      <p v-else>Todavía no se ha recibido ningún topic.</p>
+    </v-card>
   </main>
 </template>
 
 <script setup>
-import AppNavbar from '../components/AppNavbar.vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { createRealtimeStream } from '../services/realtime'
+
+const MAX_POINTS = 30
+
+const isMonitoring = ref(false)
+const lastMessage = ref(null)
+const messagesByTopic = ref({})
+const errorMessage = ref('')
+
+let stream = null
+
+const statusText = computed(() => {
+  return isMonitoring.value
+    ? 'Monitorizando datos MQTT'
+    : 'Monitorización detenida'
+})
+
+const formattedLastMessage = computed(() => {
+  return lastMessage.value
+    ? JSON.stringify(lastMessage.value, null, 2)
+    : ''
+})
+
+const topicEntries = computed(() => {
+  return Object.entries(messagesByTopic.value)
+})
+
+function startMonitoring() {
+  if (stream) return
+
+  errorMessage.value = ''
+
+  stream = createRealtimeStream({
+    onOpen: () => {
+      isMonitoring.value = true
+      console.log('SSE conectado')
+    },
+
+    onMessage: (data) => {
+      console.log('Mensaje SSE recibido:', data)
+
+      lastMessage.value = data
+
+      const topic = data.topic || 'sin-topic'
+      const currentMessages = messagesByTopic.value[topic] || []
+
+      messagesByTopic.value[topic] = [
+        ...currentMessages,
+        data,
+      ].slice(-MAX_POINTS)
+    },
+
+    onError: (error) => {
+      console.error('Error en conexión SSE:', error)
+      errorMessage.value = 'Se ha perdido la conexión con el streaming en tiempo real.'
+      stopMonitoring()
+    },
+  })
+}
+
+function stopMonitoring() {
+  if (stream) {
+    stream.close()
+    stream = null
+  }
+
+  isMonitoring.value = false
+}
+
+function toggleMonitoring() {
+  if (isMonitoring.value) {
+    stopMonitoring()
+  } else {
+    startMonitoring()
+  }
+}
+
+onBeforeUnmount(() => {
+  stopMonitoring()
+})
 </script>
 
 <style scoped>
-.page {
+.realtime-view {
   padding: 24px;
+}
+
+pre {
+  white-space: pre-wrap;
+  background: #111827;
+  color: #e5e7eb;
+  padding: 16px;
+  border-radius: 8px;
+  overflow-x: auto;
 }
 </style>
