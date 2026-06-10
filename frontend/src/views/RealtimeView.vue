@@ -9,9 +9,15 @@
           <p>{{ statusText }}</p>
         </div>
 
-        <v-btn :color="isMonitoring ? 'error' : 'primary'" @click="toggleMonitoring">
-          {{ isMonitoring ? 'Detener monitorización' : 'Iniciar monitorización' }}
-        </v-btn>
+        <div class="d-flex align-center ga-2">
+          <v-btn variant="outlined" color="secondary" @click="resetCharts">
+            Reset gráficas
+          </v-btn>
+
+          <v-btn :color="isMonitoring ? 'error' : 'primary'" @click="toggleMonitoring">
+            {{ isMonitoring ? 'Detener monitorización' : 'Iniciar monitorización' }}
+          </v-btn>
+        </div>
       </div>
 
       <v-alert v-if="errorMessage" type="error" variant="tonal" class="mt-4">
@@ -122,6 +128,12 @@ function toggleMonitoring() {
   } else {
     startMonitoring()
   }
+}
+
+function resetCharts() {
+  messagesByTopic.value = {}
+  lastMessage.value = null
+  errorMessage.value = ''
 }
 
 onBeforeUnmount(() => {
