@@ -200,8 +200,8 @@ const chartData = computed(() => {
       pointBackgroundColor: color,
       pointBorderColor: color,
 
-      pointRadius: 3,
-      pointHoverRadius: 5,
+      pointRadius: 0,
+      pointHoverRadius: 4,
 
       borderWidth: 2,
       tension: 0.25,

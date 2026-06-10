@@ -2,14 +2,14 @@
   <main class="realtime-view">
     <h1>Monitorización en tiempo real</h1>
 
-    <v-card class="pa-4 mb-4">
-      <div class="d-flex align-center justify-space-between">
+    <v-card class="pa-4 mb-4 realtime-status-card">
+      <div class="status-content">
         <div>
           <h2>Estado SSE</h2>
           <p>{{ statusText }}</p>
         </div>
 
-        <div class="d-flex align-center ga-2">
+        <div class="status-actions">
           <v-btn variant="outlined" color="secondary" @click="resetCharts">
             Reset gráficas
           </v-btn>
@@ -153,5 +153,42 @@ pre {
   padding: 16px;
   border-radius: 8px;
   overflow-x: auto;
+}
+.status-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.status-actions {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+@media (max-width: 768px) {
+  .realtime-view {
+    padding: 16px;
+  }
+
+  .realtime-view h1 {
+    font-size: 32px;
+    line-height: 1.2;
+  }
+
+  .status-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .status-actions {
+    flex-direction: column;
+    width: 100%;
+  }
+
+  .status-actions .v-btn {
+    width: 100%;
+  }
 }
 </style>
