@@ -7,12 +7,6 @@
         <MeasurementsChart />
       </section>
 
-      <!-- Links -->
-      <section class="section links">
-        <a :href="`https://grafana.${domain}`" target="_blank" class="btn-link grafana">
-          Grafana →
-        </a>
-      </section>
 
     </div>
   </main>
@@ -26,7 +20,6 @@ import { getHealth, getInfo } from '../services/api.js'
 import MeasurementsChart from '../components/MeasurementsChart.vue'
 
 const clientName = import.meta.env.VITE_CLIENT_NAME || 'Koiote'
-const domain = import.meta.env.VITE_DOMAIN || ''
 
 const health = ref({})
 const info = ref({})
