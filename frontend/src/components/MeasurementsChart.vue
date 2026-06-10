@@ -41,16 +41,31 @@
             variant="outlined"
             class="filter-field"
           />
+          <div class="date-limit-field">
+            <v-text-field
+              v-model="endDate"
+              label="Fecha fin"
+              type="datetime-local"
+              step="1"
+              density="comfortable"
+              variant="outlined"
+              class="filter-field"
+            />
 
-          <v-text-field
-            v-model="endDate"
-            label="Fecha fin"
-            type="datetime-local"
-            step="1"
-            density="comfortable"
-            variant="outlined"
-            class="filter-field"
-          />
+            <div class="date-limit-text">
+              <div>Tiempo máximo: {{ maxRangeText }}</div>
+              <div>
+                Fecha fin máxima:
+                <button
+                  type="button"
+                  class="date-limit-button"
+                  @click="applyMaxEndDate"
+                >
+                  {{ maxEndDateText }}
+                </button>
+              </div>
+            </div>
+          </div>
 
           <v-btn
             height="48"
@@ -116,6 +131,7 @@ ChartJS.register(
 
 const variables = ref([])
 const selectedVariables = ref([])
+const chartVariables = ref([])
 const bucketMinutes = ref(1)
 const historyData = ref([])
 const loading = ref(false)
@@ -133,15 +149,38 @@ const COLORS = [
   '#5d4037', // marrón
 ]
 
+const MAX_POINTS = 500
+const DEFAULT_START_DATE = '2026-06-02T08:20:00'
+
+const maxEndDateText = computed(() => {
+  if (!maxRangeMinutes.value) return '—'
+
+  const start = startDate.value
+    ? new Date(startDate.value)
+    : new Date(DEFAULT_START_DATE)
+
+  const maxEnd = new Date(start.getTime() + maxRangeMinutes.value * 60 * 1000)
+
+  return maxEnd.toLocaleString('es', {
+    day: '2-digit',
+    month: '2-digit',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  })
+})
+
 const chartData = computed(() => {
   const labels = [
     ...new Set(historyData.value.map((row) => formatLabel(row.time)))
   ]
 
-  const datasets = selectedVariables.value.map((variableName, index) => {
+  const datasets = chartVariables.value.map((variableName, index) => {
     const rows = historyData.value.filter(
       (row) => row.variable === variableName
     )
+
+
 
     const color = COLORS[index % COLORS.length]
 
@@ -161,8 +200,8 @@ const chartData = computed(() => {
       pointBackgroundColor: color,
       pointBorderColor: color,
 
-      pointRadius: 3,
-      pointHoverRadius: 5,
+      pointRadius: 0,
+      pointHoverRadius: 4,
 
       borderWidth: 2,
       tension: 0.25,
@@ -190,24 +229,52 @@ const chartOptions = {
   },
 }
 
+const maxRangeMinutes = computed(() => {
+  const selectedCount = selectedVariables.value.length
+  const bucket = Number(bucketMinutes.value)
+
+  if (!selectedCount || !bucket) return null
+
+  return Math.floor((MAX_POINTS * bucket) / selectedCount)
+})
+
+const maxRangeText = computed(() => {
+  if (!maxRangeMinutes.value) return '—'
+
+  const hours = Math.floor(maxRangeMinutes.value / 60)
+  const minutes = maxRangeMinutes.value % 60
+
+  if (hours === 0) return `${minutes} min`
+  if (minutes === 0) return `${hours} h`
+
+  return `${hours} h ${minutes} min`
+})
+
 async function loadVariables() {
   const response = await getMeasurementVariables()
   variables.value = response.data || []
 }
 
 async function loadChart() {
-  loading.value = true
   error.value = ''
+
+  if (!validateChartRequest()) {
+    historyData.value = []
+    return
+  }
+
+  loading.value = true
 
   try {
     const response = await getAverageHistory({
       variables: selectedVariables.value,
       bucketMinutes: bucketMinutes.value,
-      startDate: startDate.value || null,
-      endDate: endDate.value || null,
+      startDate: toIsoOrNull(startDate.value),
+      endDate: toIsoOrNull(endDate.value),
     })
 
     historyData.value = response.data || []
+    chartVariables.value = [...selectedVariables.value]
   } catch (e) {
     error.value = 'No se ha podido cargar la gráfica'
   } finally {
@@ -222,6 +289,74 @@ function formatLabel(date) {
     hour: '2-digit',
     minute: '2-digit',
   })
+}
+
+function toIsoOrNull(value){
+  if (!value) return null
+  return new Date(value).toISOString()
+}
+
+function validateChartRequest() {
+  const selectedCount = selectedVariables.value.length
+  const bucket = Number(bucketMinutes.value)
+
+  if (!selectedCount) {
+    error.value = 'Selecciona al menos una variable'
+    return false
+  }
+
+  if (!bucket || bucket < 1) {
+    error.value = 'La media debe ser de al menos 1 minuto'
+    return false
+  }
+
+  if (!endDate.value) {
+    error.value = 'Selecciona fecha inicio y fecha fin para evitar cargar demasiados datos'
+    return false
+  }
+
+  const start = startDate.value
+    ? new Date(startDate.value)
+    : new Date(DEFAULT_START_DATE)
+  const end = new Date(endDate.value)
+
+  if (end <= start) {
+    error.value = 'La fecha fin debe ser posterior a la fecha inicio'
+    return false
+  }
+
+  const diffMinutes = (end - start) / 1000 / 60
+  const estimatedPoints = selectedCount * (diffMinutes / bucket)
+
+  if (estimatedPoints > MAX_POINTS) {
+    error.value =
+      `Demasiados datos para mostrar. ` +
+      `Con ${selectedCount} variable(s) y media cada ${bucket} minuto(s), ` +
+      `puedes seleccionar como máximo ${maxRangeText.value}.`
+
+    return false
+  }
+
+  return true
+}
+
+function applyMaxEndDate() {
+  if (!maxRangeMinutes.value) return
+
+  const start = startDate.value
+    ? new Date(startDate.value)
+    : new Date(DEFAULT_START_DATE)
+
+  const maxEnd = new Date(start.getTime() + maxRangeMinutes.value * 60 * 1000)
+
+  endDate.value = toDatetimeLocalValue(maxEnd)
+}
+
+function toDatetimeLocalValue(date) {
+  const offsetMs = date.getTimezoneOffset() * 60 * 1000
+  const localDate = new Date(date.getTime() - offsetMs)
+
+  return localDate.toISOString().slice(0, 19)
 }
 
 onMounted(loadVariables)
@@ -251,6 +386,26 @@ onMounted(loadVariables)
   width: 100%;
   height: 420px;
   margin-top: 16px;
+}
+.date-limit-field {
+  min-width: 0;
+}
+
+.date-limit-text {
+  margin-top: -14px;
+  padding-left: 12px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+.date-limit-button {
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #1976d2;
+  font-size: 12px;
+  cursor: pointer;
+  text-decoration: underline;
 }
 
 @media (max-width: 900px) {

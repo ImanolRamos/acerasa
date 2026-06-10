@@ -28,6 +28,15 @@
         </div>
       </div>
 
+
+       <!-- Links -->
+      <section class="section links">
+        <a :href="`https://grafana.${domain}`" target="_blank" class="btn-link grafana">
+          Grafana →
+        </a>
+      </section>
+
+
     </div>
   </main>
 </template>
@@ -40,6 +49,8 @@ const health = ref({})
 const info = ref({})
 const measurementCount = ref(0)
 const lastCheck = ref('—')
+const domain = import.meta.env.VITE_DOMAIN || ''
+
 
 let timer = null
 
@@ -89,6 +100,9 @@ onUnmounted(() => {
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 16px;
 }
+.links {
+  margin-top: 24px;
+}
 
 .stat-card {
   background: white;
@@ -123,5 +137,18 @@ onUnmounted(() => {
 
 .text-error {
   color: #dc2626;
+}
+.btn-link {
+  display: inline-block;
+  padding: 10px 20px;
+  border-radius: 10px;
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.grafana {
+  background: #f97316;
+  color: white;
 }
 </style>
